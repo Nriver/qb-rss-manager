@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -189,7 +190,9 @@ class App(QWidget):
         self.tableWidget.customContextMenuRequested.connect(self.generateMenu)
 
     def generateMenu(self, pos):
-        # 弹窗菜单
+        # 右键弹窗菜单
+        # 右键弹窗菜单加一个sleep, 防止长按右键导致右键事件被重复触发
+        time.sleep(0)
         print("pos======", pos)
         self.menu = QMenu(self)
         self.delete_action = QAction("删除")
