@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox
@@ -176,6 +176,27 @@ class App(QWidget):
         self.tableWidget.cellChanged.connect(self.on_cell_changed)
 
         self.tableWidget.keyPressEvent = self.handle_key_press
+
+        # 右键菜单
+        self.tableWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tableWidget.customContextMenuRequested.connect(self.generateMenu)
+
+    def generateMenu(self, pos):
+        # 本来是弹窗菜单, 这里直接删除选中的行, 然后刷新列表
+        r = self.tableWidget.currentRow()
+        print(r)
+        self.tableWidget.blockSignals(True)
+        data_list.pop(r)
+        self.on_clean_row_click()
+        self.tableWidget.blockSignals(False)
+
+        return
+
+        # 弹窗菜单参考
+        # print("pos======", pos)
+        # self.menu = QMenu(self)
+        # self.menu.addAction("删除")
+        # self.menu.exec_(self.tableWidget.mapToGlobal(pos))
 
     @pyqtSlot()
     def on_double_click(self):
@@ -365,6 +386,7 @@ class App(QWidget):
         elif event.key() == Qt.Key_I and (event.modifiers() & Qt.ControlModifier):
             # 导入excel数据
             print('ctrl i')
+            self.tableWidget.blockSignals(True)
             r = self.tableWidget.currentRow()
             c = self.tableWidget.currentColumn()
             rows = app.clipboard().text().split('\n')
@@ -387,8 +409,13 @@ class App(QWidget):
                 # 保存结果
                 if config['auto_save']:
                     save_config()
+            self.tableWidget.blockSignals(False)
 
         # return
+
+    def handle_mouse_press(self, event):
+        print(event)
+        event.accept()
 
 
 # 获取pyqt5的exception
