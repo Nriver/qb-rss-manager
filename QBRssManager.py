@@ -173,7 +173,7 @@ class App(QWidget):
         print(r, c, text)
         # 修改数据
         data_list[r][c] = text
-        print(data_list)
+        print('on_cell_changed 结果', data_list)
         save_config()
 
     @pyqtSlot()
@@ -225,8 +225,13 @@ class App(QWidget):
             for cell in self.copied_cells:
                 new_r = cell.row() + r
                 new_c = cell.column() + c
+                print('粘贴数据', new_r, new_c, cell.data())
                 self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell.data()))
-                # data_list[new_r][new_c] = cell.data()
+                data_list[new_r][new_c] = cell.data()
+                print('粘贴结果', data_list)
+            # 保存结果
+            save_config()
+
         elif event.key() == Qt.Key_Delete:
             print('delete')
             for x in self.tableWidget.selectedIndexes():
