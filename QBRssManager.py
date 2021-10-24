@@ -42,21 +42,26 @@ try:
         if 'max_row_size' not in config:
             config['max_row_size'] = 100
 except:
+
     # 默认配置
-    rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
+    # rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
+    rules_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\download_rules.json')
     # 保存后打开qb主程序 1为自动打开 其它值不自动打开
     open_qb_after_export = 1
     # qb主程序路径
-    qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
+    # qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
+    qb_executable = os.path.expandvars(r'%ProgramW6432%\qBittorrent\qbittorrent_x64.exe')
     data_list = [
     ]
     # 自动保存
     auto_save = 0
+    max_row_size = 100
     config['rules_path'] = rules_path
     config['open_qb_after_export'] = open_qb_after_export
     config['qb_executable'] = qb_executable
     config['data_list'] = data_list
     config['auto_save'] = auto_save
+    config['max_row_size'] = max_row_size
 
     with open('config.json', 'w', encoding='utf-8') as f:
         config['data_list'] = data_list
@@ -165,8 +170,8 @@ class App(QWidget):
         # 拉长
         header = self.tableWidget.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
