@@ -35,6 +35,8 @@ try:
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.loads(f.read())
         data_list = config['data_list']
+        if 'auto_save' not in config:
+            config['auto_save'] = 0
 except:
     # 默认配置
     rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
@@ -44,10 +46,13 @@ except:
     qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
     data_list = [
     ]
+    # 自动保存
+    auto_save = 0
     config['rules_path'] = rules_path
     config['open_qb_after_export'] = open_qb_after_export
     config['qb_executable'] = qb_executable
     config['data_list'] = data_list
+    config['auto_save'] = auto_save
 
     with open('config.json', 'w', encoding='utf-8') as f:
         config['data_list'] = data_list
@@ -75,7 +80,7 @@ class App(QWidget):
         self.title = 'qbitorrent 订阅下载规则管理'
         self.left = 0
         self.top = 0
-        self.width = 1200
+        self.width = 1400
         self.height = 800
 
         # ctrl+c
@@ -99,6 +104,7 @@ class App(QWidget):
         self.layout_button = QHBoxLayout()
         self.layout_button.addWidget(self.move_up_button)
         self.layout_button.addWidget(self.move_down_button)
+        self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.output_button)
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.layout_button)
@@ -117,6 +123,9 @@ class App(QWidget):
         self.move_up_button.clicked.connect(self.on_move_up_click)
         self.move_down_button = QPushButton('下移', self)
         self.move_down_button.clicked.connect(self.on_move_down_click)
+
+        self.save_button = QPushButton('保存配置', self)
+        self.save_button.clicked.connect(self.on_save_click)
 
     def createTable(self):
         self.tableWidget = QTableWidget()
@@ -150,7 +159,7 @@ class App(QWidget):
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
 
@@ -186,7 +195,8 @@ class App(QWidget):
             self.tableWidget.setItem(r - 1, i, QTableWidgetItem(data_list[r - 1][i]))
 
         self.tableWidget.setCurrentCell(r - 1, c)
-        save_config()
+        if config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -206,7 +216,8 @@ class App(QWidget):
             self.tableWidget.setItem(r + 1, i, QTableWidgetItem(data_list[r + 1][i]))
 
         self.tableWidget.setCurrentCell(r + 1, c)
-        save_config()
+        if config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -220,7 +231,8 @@ class App(QWidget):
         # 修改数据
         data_list[r][c] = text
         print('on_cell_changed 结果', data_list)
-        save_config()
+        if config['auto_save']:
+            save_config()
 
     @pyqtSlot()
     def on_export_click(self):
@@ -251,6 +263,10 @@ class App(QWidget):
             # 启动qb
             subprocess.Popen([config['qb_executable']])
 
+    @pyqtSlot()
+    def on_save_click(self):
+        save_config()
+
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
             print('edit cell')
@@ -280,7 +296,8 @@ class App(QWidget):
                 data_list[new_r][new_c] = cell.data()
                 print('粘贴结果', data_list)
             # 保存结果
-            save_config()
+            if config['auto_save']:
+                save_config()
             self.tableWidget.blockSignals(False)
 
         # 删除数据
@@ -292,7 +309,8 @@ class App(QWidget):
                 c = x.column()
                 self.tableWidget.setItem(r, c, QTableWidgetItem(""))
                 data_list[r][c] = ""
-            save_config()
+            if config['auto_save']:
+                save_config()
             self.tableWidget.blockSignals(False)
 
         # 方向键
@@ -336,7 +354,8 @@ class App(QWidget):
                     data_list[new_r][new_c] = cell_data
                     print('粘贴结果', data_list)
                 # 保存结果
-                save_config()
+                if config['auto_save']:
+                    save_config()
 
         # return
 
