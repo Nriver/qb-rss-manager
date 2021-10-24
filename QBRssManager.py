@@ -225,6 +225,9 @@ class App(QWidget):
             for cell in self.copied_cells:
                 new_r = cell.row() + r
                 new_c = cell.column() + c
+                if new_c > (len(headers) - 1):
+                    # 忽略跨行数据 防止数组越界
+                    continue
                 print('粘贴数据', new_r, new_c, cell.data())
                 self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell.data()))
                 data_list[new_r][new_c] = cell.data()
