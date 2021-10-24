@@ -6,7 +6,7 @@ import sys
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton
+    QStyleFactory, QPushButton, QHBoxLayout
 
 # 表头
 headers = ['播出时间', '番剧名称', '包含关键字', '排除关键字', '保存路径', 'RSS订阅地址']
@@ -96,9 +96,12 @@ class App(QWidget):
 
         self.createButton()
         self.createTable()
-
+        self.layout_button = QHBoxLayout()
+        self.layout_button.addWidget(self.move_up_button)
+        self.layout_button.addWidget(self.move_down_button)
+        self.layout_button.addWidget(self.output_button)
         self.layout = QVBoxLayout()
-        self.layout.addWidget(self.output_button)
+        self.layout.addLayout(self.layout_button)
         self.layout.addWidget(self.tableWidget)
         self.setLayout(self.layout)
         # 居中显示
@@ -109,6 +112,11 @@ class App(QWidget):
         self.output_button = QPushButton('生成qb订阅规则', self)
         self.output_button.setToolTip('生成qb订阅规则')
         self.output_button.clicked.connect(self.on_export_click)
+
+        self.move_up_button = QPushButton('上移', self)
+        self.move_up_button.clicked.connect(self.on_move_up_click)
+        self.move_down_button = QPushButton('下移', self)
+        self.move_down_button.clicked.connect(self.on_move_down_click)
 
     def createTable(self):
         self.tableWidget = QTableWidget()
@@ -161,12 +169,50 @@ class App(QWidget):
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
 
     @pyqtSlot()
+    def on_move_up_click(self):
+        print('on_move_up_click()')
+        # 上移事件
+        # 防止触发 cellChange 事件导致重复更新
+        self.tableWidget.blockSignals(True)
+        r = self.tableWidget.currentRow()
+        c = self.tableWidget.currentColumn()
+        if r == 0:
+            return
+
+        data_list[r], data_list[r - 1] = data_list[r - 1], data_list[r]
+
+        for i in range(len(headers)):
+            self.tableWidget.setItem(r, i, QTableWidgetItem(data_list[r][i]))
+            self.tableWidget.setItem(r - 1, i, QTableWidgetItem(data_list[r - 1][i]))
+
+        self.tableWidget.setCurrentCell(r - 1, c)
+        save_config()
+        self.tableWidget.blockSignals(False)
+
+    @pyqtSlot()
+    def on_move_down_click(self):
+        # 下移事件
+        # 防止触发 cellChange 事件导致重复更新
+        self.tableWidget.blockSignals(True)
+        r = self.tableWidget.currentRow()
+        c = self.tableWidget.currentColumn()
+        if r == len(data_list):
+            return
+
+        data_list[r], data_list[r + 1] = data_list[r + 1], data_list[r]
+
+        for i in range(len(headers)):
+            self.tableWidget.setItem(r, i, QTableWidgetItem(data_list[r][i]))
+            self.tableWidget.setItem(r + 1, i, QTableWidgetItem(data_list[r + 1][i]))
+
+        self.tableWidget.setCurrentCell(r + 1, c)
+        save_config()
+        self.tableWidget.blockSignals(False)
+
+    @pyqtSlot()
     def on_cell_changed(self):
         print('on_cell_changed()')
         # 修改事件
-
-        # bug 多个cell粘贴 结果不正确
-
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
         text = self.tableWidget.currentItem().text()
@@ -217,6 +263,7 @@ class App(QWidget):
             print(f'复制了 {len(self.copied_cells)} 个')
         elif event.key() == Qt.Key_V and (event.modifiers() & Qt.ControlModifier):
             print('ctrl v')
+            self.tableWidget.blockSignals(True)
             if not self.copied_cells:
                 return
             r = self.tableWidget.currentRow() - self.copied_cells[0].row()
@@ -234,15 +281,19 @@ class App(QWidget):
                 print('粘贴结果', data_list)
             # 保存结果
             save_config()
+            self.tableWidget.blockSignals(False)
 
         # 删除数据
         elif event.key() == Qt.Key_Delete:
             print('delete')
+            self.tableWidget.blockSignals(True)
             for x in self.tableWidget.selectedIndexes():
                 r = x.row()
                 c = x.column()
                 self.tableWidget.setItem(r, c, QTableWidgetItem(""))
                 data_list[r][c] = ""
+            save_config()
+            self.tableWidget.blockSignals(False)
 
         # 方向键
         elif event.key() == Qt.Key_Right:
