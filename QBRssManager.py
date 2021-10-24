@@ -88,6 +88,8 @@ class App(QWidget):
     def __init__(self):
         super().__init__()
         self.title = 'qbitorrent 订阅下载规则管理 by Nriver'
+        # 图标
+        self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
         self.top = 0
         self.width = 1400
@@ -450,6 +452,13 @@ def refresh_tray():
         # 窗口宽度 // 图标宽度 = 图标个数?
         for x in range((rect[2] - rect[0]) // 24):
             win32gui.SendMessage(hToolbarWindow32, WM_MOUSEMOVE, 0, 1)
+
+
+def resource_path(relative_path):
+    # 兼容pyinstaller的文件资源访问
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath('.'), relative_path)
 
 
 # 获取pyqt5的exception
