@@ -87,7 +87,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qbitorrent 订阅下载规则管理'
+        self.title = 'qbitorrent 订阅下载规则管理 by Nriver'
         self.left = 0
         self.top = 0
         self.width = 1400
@@ -172,10 +172,17 @@ class App(QWidget):
         header = self.tableWidget.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
+        # header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
+        # header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
+
+        # self.tableWidget.setColumnWidth(0, 100)
+        self.tableWidget.setColumnWidth(1, 260)
+        self.tableWidget.setColumnWidth(2, 210)
+        # self.tableWidget.setColumnWidth(3, 100)
+        # self.tableWidget.setColumnWidth(4, 400)
+        self.tableWidget.setColumnWidth(5, 300)
 
         # 双击事件绑定
         self.tableWidget.doubleClicked.connect(self.on_double_click)
