@@ -206,8 +206,8 @@ class App(QWidget):
             subprocess.Popen([config['qb_executable']])
 
     def handle_key_press(self, event):
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            print('enter')
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
+            print('edit cell')
             self.tableWidget.edit(self.tableWidget.currentIndex())
 
         #   复制粘贴
@@ -235,6 +235,7 @@ class App(QWidget):
             # 保存结果
             save_config()
 
+        # 删除数据
         elif event.key() == Qt.Key_Delete:
             print('delete')
             for x in self.tableWidget.selectedIndexes():
@@ -260,6 +261,31 @@ class App(QWidget):
             print('Move down')
             self.tableWidget.setCurrentCell(max(self.tableWidget.currentRow() + 1, 0),
                                             self.tableWidget.currentColumn())
+
+        elif event.key() == Qt.Key_I and (event.modifiers() & Qt.ControlModifier):
+            # 导入excel数据
+            print('ctrl i')
+            r = self.tableWidget.currentRow()
+            c = self.tableWidget.currentColumn()
+            rows = app.clipboard().text().split('\n')
+            for b_r, row in enumerate(rows):
+                if not row:
+                    continue
+                cells = row.split('\t')
+                print(cells)
+
+                for b_c, cell_data in enumerate(cells):
+                    new_r = b_r + r
+                    new_c = b_c + c
+                    if new_c > (len(headers) - 1):
+                        # 忽略跨行数据 防止数组越界
+                        continue
+                    print('粘贴数据', new_r, new_c, cell_data)
+                    self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell_data))
+                    data_list[new_r][new_c] = cell_data
+                    print('粘贴结果', data_list)
+                # 保存结果
+                save_config()
 
         # return
 
