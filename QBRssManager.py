@@ -7,7 +7,7 @@ import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction
 from win32con import WM_MOUSEMOVE
 
 # 表头
@@ -189,21 +189,14 @@ class App(QWidget):
         self.tableWidget.customContextMenuRequested.connect(self.generateMenu)
 
     def generateMenu(self, pos):
-        # 本来是弹窗菜单, 这里直接删除选中的行, 然后刷新列表
-        r = self.tableWidget.currentRow()
-        print(r)
-        self.tableWidget.blockSignals(True)
-        data_list.pop(r)
-        self.on_clean_row_click()
-        self.tableWidget.blockSignals(False)
-
+        # 弹窗菜单
+        print("pos======", pos)
+        self.menu = QMenu(self)
+        self.delete_action = QAction("删除")
+        self.delete_action.triggered.connect(self.menu_delete_action)
+        self.menu.addAction(self.delete_action)
+        self.menu.exec_(self.tableWidget.mapToGlobal(pos))
         return
-
-        # 弹窗菜单参考
-        # print("pos======", pos)
-        # self.menu = QMenu(self)
-        # self.menu.addAction("删除")
-        # self.menu.exec_(self.tableWidget.mapToGlobal(pos))
 
     @pyqtSlot()
     def on_double_click(self):
@@ -386,7 +379,7 @@ class App(QWidget):
             print('Move up')
             self.tableWidget.setCurrentCell(max(self.tableWidget.currentRow() - 1, 0),
                                             self.tableWidget.currentColumn())
-        elif event.key() == Qt.Key_Up:
+        elif event.key() == Qt.Key_Down:
             print('Move down')
             self.tableWidget.setCurrentCell(max(self.tableWidget.currentRow() + 1, 0),
                                             self.tableWidget.currentColumn())
@@ -420,6 +413,15 @@ class App(QWidget):
             self.tableWidget.blockSignals(False)
 
         # return
+
+    def menu_delete_action(self):
+        # 右键菜单 删除
+        r = self.tableWidget.currentRow()
+        print(r)
+        self.tableWidget.blockSignals(True)
+        data_list.pop(r)
+        self.on_clean_row_click()
+        self.tableWidget.blockSignals(False)
 
 
 def refresh_tray():
