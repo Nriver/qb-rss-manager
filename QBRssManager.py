@@ -37,6 +37,8 @@ try:
         data_list = config['data_list']
         if 'auto_save' not in config:
             config['auto_save'] = 0
+        if 'max_row_size' not in config:
+            config['max_row_size'] = 100
 except:
     # 默认配置
     rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
@@ -60,9 +62,9 @@ except:
     # 生成配置直接退出
     sys.exit()
 
-# 补到100个数据
-if len(data_list) < 100:
-    for _ in range(100 - len(data_list)):
+# 补到 max_row_size 个数据
+if len(data_list) < config['max_row_size']:
+    for _ in range(config['max_row_size'] - len(data_list)):
         data_list.append(['' for x in range(len(headers))])
 
 
@@ -104,6 +106,7 @@ class App(QWidget):
         self.layout_button = QHBoxLayout()
         self.layout_button.addWidget(self.move_up_button)
         self.layout_button.addWidget(self.move_down_button)
+        self.layout_button.addWidget(self.clean_row_button)
         self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.output_button)
         self.layout = QVBoxLayout()
@@ -126,6 +129,9 @@ class App(QWidget):
 
         self.save_button = QPushButton('保存配置', self)
         self.save_button.clicked.connect(self.on_save_click)
+
+        self.clean_row_button = QPushButton('清理空行', self)
+        self.clean_row_button.clicked.connect(self.on_clean_row_click)
 
     def createTable(self):
         self.tableWidget = QTableWidget()
@@ -272,9 +278,25 @@ class App(QWidget):
         # Set the main message
         self.msg.setText("保存成功")
         # Set the title of the window
-        self.msg.setWindowTitle("提示信息")
+        self.msg.setWindowTitle("不错不错")
         # Display the message box
         self.msg.show()
+
+    @pyqtSlot()
+    def on_clean_row_click(self):
+        # 防止触发 cellChange 事件导致重复更新
+        self.tableWidget.blockSignals(True)
+        data_list = clean_data_list()
+        # 长度补充
+        if len(data_list) < config['max_row_size']:
+            for _ in range(config['max_row_size'] - len(data_list)):
+                data_list.append(['' for x in range(len(headers))])
+        # 更新整个列表
+        for cx, row in enumerate(data_list):
+            for cy, d in enumerate(row):
+                self.tableWidget.setItem(cx, cy, QTableWidgetItem(d))
+
+        self.tableWidget.blockSignals(False)
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
