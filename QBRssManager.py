@@ -6,7 +6,7 @@ import sys
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox
 
 # 表头
 headers = ['播出时间', '番剧名称', '包含关键字', '排除关键字', '保存路径', 'RSS订阅地址']
@@ -266,6 +266,15 @@ class App(QWidget):
     @pyqtSlot()
     def on_save_click(self):
         save_config()
+        self.msg = QMessageBox()
+        # Set the information icon
+        self.msg.setIcon(QMessageBox.Information)
+        # Set the main message
+        self.msg.setText("保存成功")
+        # Set the title of the window
+        self.msg.setWindowTitle("提示信息")
+        # Display the message box
+        self.msg.show()
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
