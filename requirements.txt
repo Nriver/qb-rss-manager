@@ -1,1 +1,2 @@
 pyqt5
+pywin32

@@ -3,10 +3,12 @@ import os
 import subprocess
 import sys
 
+import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox
+from win32con import WM_MOUSEMOVE
 
 # 表头
 headers = ['播出时间', '番剧名称', '包含关键字', '排除关键字', '保存路径', 'RSS订阅地址']
@@ -286,9 +288,10 @@ class App(QWidget):
                 os.system(f'taskkill /f /im {qb_executable_name}')
             except:
                 pass
-
             # 启动qb
             subprocess.Popen([config['qb_executable']])
+            # 刷新任务栏图标
+            refresh_tray()
 
     @pyqtSlot()
     def on_save_click(self):
@@ -413,9 +416,23 @@ class App(QWidget):
 
         # return
 
-    def handle_mouse_press(self, event):
-        print(event)
-        event.accept()
+
+def refresh_tray():
+    # 刷新任务栏图标, 去掉强制关闭进程后的残留图标
+    hShellTrayWnd = win32gui.FindWindow("Shell_trayWnd", "")
+    hTrayNotifyWnd = win32gui.FindWindowEx(hShellTrayWnd, 0, "TrayNotifyWnd", None)
+    hSysPager = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'SysPager', None)
+    if hSysPager:
+        hToolbarWindow32 = win32gui.FindWindowEx(hSysPager, 0, 'ToolbarWindow32', None)
+    else:
+        hToolbarWindow32 = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'ToolbarWindow32', None);
+    print('hToolbarWindow32', hToolbarWindow32)
+    if hToolbarWindow32:
+        rect = win32gui.GetWindowRect(hToolbarWindow32)
+        print(rect)
+        # 窗口宽度 // 图标宽度 = 图标个数?
+        for x in range((rect[2] - rect[0]) // 24):
+            win32gui.SendMessage(hToolbarWindow32, WM_MOUSEMOVE, 0, 1)
 
 
 # 获取pyqt5的exception
