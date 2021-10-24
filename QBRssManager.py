@@ -51,7 +51,7 @@ except:
     open_qb_after_export = 1
     # qb主程序路径
     # qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
-    qb_executable = os.path.expandvars(r'%ProgramW6432%\qBittorrent\qbittorrent_x64.exe')
+    qb_executable = os.path.expandvars(r'%ProgramW6432%\qBittorrent\qbittorrent.exe')
     data_list = [
     ]
     # 自动保存
@@ -204,7 +204,7 @@ class App(QWidget):
         time.sleep(0)
         print("pos======", pos)
         self.menu = QMenu(self)
-        self.delete_action = QAction("删除")
+        self.delete_action = QAction("删除整条订阅")
         self.delete_action.triggered.connect(self.menu_delete_action)
         self.menu.addAction(self.delete_action)
         self.menu.exec_(self.tableWidget.mapToGlobal(pos))
@@ -431,8 +431,14 @@ class App(QWidget):
         r = self.tableWidget.currentRow()
         print(r)
         self.tableWidget.blockSignals(True)
-        data_list.pop(r)
-        self.on_clean_row_click()
+
+        # 修改为只删除当前行, 不清理列表
+        r = self.tableWidget.currentRow()
+        data_list[r] = ['' for _ in range(len(headers))]
+        cx = r
+        for cy in range(len(headers)):
+            self.tableWidget.setItem(cx, cy, QTableWidgetItem(''))
+
         self.tableWidget.blockSignals(False)
 
 
