@@ -114,7 +114,8 @@ class App(QWidget):
         self.top = 0
         self.width = config['full_window_width']
         self.height = config['full_window_height']
-
+        # 防止初始化时触发header宽度变化事件导致参数被覆盖, 等初始化完毕再设置为False
+        self.preventHeaderResizeEvent = True
         # ctrl+c
         self.copied_cells = []
 
@@ -145,6 +146,7 @@ class App(QWidget):
         self.setLayout(self.layout)
         # 居中显示
         self.center()
+        self.preventHeaderResizeEvent = False
         self.show()
 
     def createButton(self):
@@ -175,10 +177,12 @@ class App(QWidget):
         self.tableWidget.verticalHeader().setStyleSheet("QHeaderView { qproperty-defaultAlignment: AlignCenter; }");
 
         # 渲染表头
+        self.preventHeaderResizeEvent = True
         for i, x in enumerate(headers):
             item = QTableWidgetItem(x)
             item.setForeground(QtGui.QColor(0, 0, 255))
             self.tableWidget.setHorizontalHeaderItem(i, item)
+        self.tableWidget.horizontalHeader().sectionResized.connect(self.on_header_resized)
 
         # 渲染数据
         # 空数据处理
@@ -251,6 +255,18 @@ class App(QWidget):
         self.menu.addAction(self.clear_action)
         self.menu.exec_(self.tableWidget.mapToGlobal(a))
         # return
+
+    def on_header_resized(self):
+        if self.preventHeaderResizeEvent:
+            return
+        print('on_header_resized()')
+        # 修改列宽写入配置
+        column_width_list_tmp = []
+        for i in range(len(headers)):
+            column_width_list_tmp.append(self.tableWidget.columnWidth(i))
+        print(column_width_list_tmp)
+        config['column_width_list'] = column_width_list_tmp
+        save_config()
 
     @pyqtSlot()
     def on_double_click(self):
@@ -502,6 +518,12 @@ class App(QWidget):
             self.tableWidget.setItem(cx, cy, QTableWidgetItem(''))
 
         self.tableWidget.blockSignals(False)
+
+    def resizeEvent(self, event):
+        print("Window has been resized")
+        config['full_window_width'] = self.frameGeometry().width()
+        config['full_window_height'] = self.frameGeometry().height()
+        save_config()
 
 
 def refresh_tray():
