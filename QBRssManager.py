@@ -6,7 +6,7 @@ import time
 
 import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import pyqtSlot, Qt, QPoint
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction
 from win32con import WM_MOUSEMOVE
@@ -132,9 +132,9 @@ class App(QWidget):
         self.output_button.setToolTip('生成qb订阅规则')
         self.output_button.clicked.connect(self.on_export_click)
 
-        self.move_up_button = QPushButton('上移', self)
+        self.move_up_button = QPushButton('向上移动', self)
         self.move_up_button.clicked.connect(self.on_move_up_click)
-        self.move_down_button = QPushButton('下移', self)
+        self.move_down_button = QPushButton('向下移动', self)
         self.move_down_button.clicked.connect(self.on_move_down_click)
 
         self.save_button = QPushButton('保存配置', self)
@@ -173,7 +173,7 @@ class App(QWidget):
         # 拉长
         header = self.tableWidget.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        # header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
         # header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
@@ -202,13 +202,27 @@ class App(QWidget):
         # 右键弹窗菜单
         # 右键弹窗菜单加一个sleep, 防止长按右键导致右键事件被重复触发
         time.sleep(0)
+        # 感觉弹出菜单和实际鼠标点击位置有偏差, 尝试手动修正
         print("pos======", pos)
+        a = QPoint(pos.x() + 26, pos.y() + 22)
+
         self.menu = QMenu(self)
+        self.up_action = QAction("向上移动")
+        self.down_action = QAction("向下移动")
         self.delete_action = QAction("删除整条订阅")
+        self.clear_action = QAction("清理空行")
+
+        self.up_action.triggered.connect(self.on_move_up_click)
+        self.down_action.triggered.connect(self.on_move_down_click)
         self.delete_action.triggered.connect(self.menu_delete_action)
+        self.clear_action.triggered.connect(self.on_clean_row_click)
+
+        self.menu.addAction(self.up_action)
+        self.menu.addAction(self.down_action)
         self.menu.addAction(self.delete_action)
-        self.menu.exec_(self.tableWidget.mapToGlobal(pos))
-        return
+        self.menu.addAction(self.clear_action)
+        self.menu.exec_(self.tableWidget.mapToGlobal(a))
+        # return
 
     @pyqtSlot()
     def on_double_click(self):
@@ -287,7 +301,7 @@ class App(QWidget):
                 "affectedFeeds": [x[5], ]
             }
 
-            output_data[x[1] + '  ' + x[2]] = item
+            output_data[x[0] + ' ' + x[1]] = item
         print(config['rules_path'])
         with open(config['rules_path'], 'w', encoding='utf-8') as f:
             f.write(json.dumps(output_data, ensure_ascii=False))
