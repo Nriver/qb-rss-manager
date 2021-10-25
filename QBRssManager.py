@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetIte
 from win32con import WM_MOUSEMOVE
 
 # 表头
-headers = ['播出时间', '番剧名称', '包含关键字', '排除关键字', '保存路径', 'RSS订阅地址']
+headers = ['播出时间', '番剧名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址']
 
 # 配置
 config = {}
@@ -42,6 +42,17 @@ try:
             config['auto_save'] = 0
         if 'max_row_size' not in config:
             config['max_row_size'] = 100
+        try:
+            # 修正旧数据, 临时使用, 之后要删除
+            if len(config['data_list'][0]) == 6:
+                data_list_fix = []
+                for x in config['data_list']:
+                    row = x[:4] + ['', ] + x[4:]
+                    data_list_fix.append(row)
+                data_list = data_list_fix
+                config['data_list'] = data_list
+        except:
+            pass
 except:
 
     # 默认配置
@@ -172,19 +183,17 @@ class App(QWidget):
         # self.tableWidget.resizeColumnsToContents()
         # 拉长
         header = self.tableWidget.horizontalHeader()
-        header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        # header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        # header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
+        # header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
+        # header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         # header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
 
-        # self.tableWidget.setColumnWidth(0, 100)
+        self.tableWidget.setColumnWidth(0, 80)
         self.tableWidget.setColumnWidth(1, 260)
         self.tableWidget.setColumnWidth(2, 210)
-        # self.tableWidget.setColumnWidth(3, 100)
-        # self.tableWidget.setColumnWidth(4, 400)
-        self.tableWidget.setColumnWidth(5, 300)
+        self.tableWidget.setColumnWidth(3, 65)
+        self.tableWidget.setColumnWidth(4, 62)
+        self.tableWidget.setColumnWidth(5, 370)
+        self.tableWidget.setColumnWidth(6, 290)
 
         # 双击事件绑定
         self.tableWidget.doubleClicked.connect(self.on_double_click)
@@ -297,8 +306,8 @@ class App(QWidget):
                 "enabled": True,
                 "mustContain": x[2],
                 "mustNotContain": x[3],
-                "savePath": format_path(x[4]),
-                "affectedFeeds": [x[5], ]
+                "savePath": format_path(x[5]),
+                "affectedFeeds": [x[6], ]
             }
 
             output_data[x[0] + ' ' + x[1]] = item
@@ -321,13 +330,14 @@ class App(QWidget):
     def on_save_click(self):
         save_config()
         self.msg = QMessageBox()
-        # Set the information icon
-        self.msg.setIcon(QMessageBox.Information)
-        # Set the main message
+        # 设置图标
+        self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+        # 只能通过设置样式来修改宽度, 其它设置没用
+        self.msg.setStyleSheet("QLabel {min-width: 70px;}")
+        # 提示信息
         self.msg.setText("保存成功")
-        # Set the title of the window
+        # 标题
         self.msg.setWindowTitle("不错不错")
-        # Display the message box
         self.msg.show()
 
     @pyqtSlot()
