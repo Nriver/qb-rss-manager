@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetIte
 from win32con import WM_MOUSEMOVE
 
 # 表头
-headers = ['播出时间', '番剧名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址']
+headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址']
 
 # 配置
 config = {}
@@ -107,7 +107,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qbitorrent 订阅下载规则管理 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.0.2 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -148,8 +148,8 @@ class App(QWidget):
         self.show()
 
     def createButton(self):
-        self.output_button = QPushButton('生成qb订阅规则', self)
-        self.output_button.setToolTip('生成qb订阅规则')
+        self.output_button = QPushButton('生成RSS订阅下载规则', self)
+        self.output_button.setToolTip('生成RSS订阅下载规则')
         self.output_button.clicked.connect(self.on_export_click)
 
         self.move_up_button = QPushButton('向上移动', self)
@@ -169,6 +169,10 @@ class App(QWidget):
         self.tableWidget.setRowCount(len(data_list))
         # 列数
         self.tableWidget.setColumnCount(len(headers))
+
+        # 垂直表头修改
+        # 文字居中显示
+        self.tableWidget.verticalHeader().setStyleSheet("QHeaderView { qproperty-defaultAlignment: AlignCenter; }");
 
         # 渲染表头
         for i, x in enumerate(headers):
@@ -268,8 +272,13 @@ class App(QWidget):
         data_list[r], data_list[r - 1] = data_list[r - 1], data_list[r]
 
         for i in range(len(headers)):
-            self.tableWidget.setItem(r, i, QTableWidgetItem(data_list[r][i]))
-            self.tableWidget.setItem(r - 1, i, QTableWidgetItem(data_list[r - 1][i]))
+            item1 = QTableWidgetItem(data_list[r][i])
+            item2 = QTableWidgetItem(data_list[r - 1][i])
+            if i in (0, 3, 4):
+                item1.setTextAlignment(Qt.AlignCenter)
+                item2.setTextAlignment(Qt.AlignCenter)
+            self.tableWidget.setItem(r, i, item1)
+            self.tableWidget.setItem(r - 1, i, item2)
 
         self.tableWidget.setCurrentCell(r - 1, c)
         if config['auto_save']:
@@ -289,8 +298,13 @@ class App(QWidget):
         data_list[r], data_list[r + 1] = data_list[r + 1], data_list[r]
 
         for i in range(len(headers)):
-            self.tableWidget.setItem(r, i, QTableWidgetItem(data_list[r][i]))
-            self.tableWidget.setItem(r + 1, i, QTableWidgetItem(data_list[r + 1][i]))
+            item1 = QTableWidgetItem(data_list[r][i])
+            item2 = QTableWidgetItem(data_list[r + 1][i])
+            if i in (0, 3, 4):
+                item1.setTextAlignment(Qt.AlignCenter)
+                item2.setTextAlignment(Qt.AlignCenter)
+            self.tableWidget.setItem(r, i, item1)
+            self.tableWidget.setItem(r + 1, i, item2)
 
         self.tableWidget.setCurrentCell(r + 1, c)
         if config['auto_save']:
@@ -373,7 +387,10 @@ class App(QWidget):
         # 更新整个列表
         for cx, row in enumerate(data_list):
             for cy, d in enumerate(row):
-                self.tableWidget.setItem(cx, cy, QTableWidgetItem(d))
+                item = QTableWidgetItem(d)
+                if cy in (0, 3, 4):
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
 
         self.tableWidget.blockSignals(False)
 
