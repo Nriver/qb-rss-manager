@@ -53,6 +53,12 @@ try:
                 config['data_list'] = data_list
         except:
             pass
+
+        if 'full_window_width' not in config:
+            config['full_window_width'] = 1400
+        if 'full_window_height' not in config:
+            config['full_window_height'] = 800
+
 except:
 
     # 默认配置
@@ -103,8 +109,8 @@ class App(QWidget):
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
         self.top = 0
-        self.width = 1400
-        self.height = 800
+        self.width = config['full_window_width']
+        self.height = config['full_window_height']
 
         # ctrl+c
         self.copied_cells = []
@@ -175,7 +181,10 @@ class App(QWidget):
         else:
             for cx, row in enumerate(data_list):
                 for cy, d in enumerate(row):
-                    self.tableWidget.setItem(cx, cy, QTableWidgetItem(d))
+                    item = QTableWidgetItem(d)
+                    if cy in (0, 3, 4):
+                        item.setTextAlignment(Qt.AlignCenter)
+                    self.tableWidget.setItem(cx, cy, item)
 
         self.tableWidget.move(0, 0)
 
@@ -328,6 +337,9 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_save_click(self):
+        config['full_window_width'] = self.frameGeometry().width()
+        config['full_window_height'] = self.frameGeometry().height()
+        
         save_config()
         self.msg = QMessageBox()
         # 设置图标
