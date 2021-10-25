@@ -58,6 +58,9 @@ try:
             config['full_window_width'] = 1400
         if 'full_window_height' not in config:
             config['full_window_height'] = 800
+        if 'column_width_list' not in config:
+            column_width_list = [80, 260, 210, 65, 62, 370, 290]
+            config['column_width_list'] = column_width_list
 
 except:
 
@@ -196,13 +199,16 @@ class App(QWidget):
         # header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         # header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
 
-        self.tableWidget.setColumnWidth(0, 80)
-        self.tableWidget.setColumnWidth(1, 260)
-        self.tableWidget.setColumnWidth(2, 210)
-        self.tableWidget.setColumnWidth(3, 65)
-        self.tableWidget.setColumnWidth(4, 62)
-        self.tableWidget.setColumnWidth(5, 370)
-        self.tableWidget.setColumnWidth(6, 290)
+        # self.tableWidget.setColumnWidth(0, 80)
+        # self.tableWidget.setColumnWidth(1, 260)
+        # self.tableWidget.setColumnWidth(2, 210)
+        # self.tableWidget.setColumnWidth(3, 65)
+        # self.tableWidget.setColumnWidth(4, 62)
+        # self.tableWidget.setColumnWidth(5, 370)
+        # self.tableWidget.setColumnWidth(6, 290)
+
+        for i in range(len(headers)):
+            self.tableWidget.setColumnWidth(i, config['column_width_list'][i])
 
         # 双击事件绑定
         self.tableWidget.doubleClicked.connect(self.on_double_click)
@@ -339,7 +345,10 @@ class App(QWidget):
     def on_save_click(self):
         config['full_window_width'] = self.frameGeometry().width()
         config['full_window_height'] = self.frameGeometry().height()
-        
+        column_width_list_tmp = []
+        for i in range(len(headers)):
+            column_width_list_tmp.append(self.tableWidget.columnWidth(i))
+        config['column_width_list'] = column_width_list_tmp
         save_config()
         self.msg = QMessageBox()
         # 设置图标
