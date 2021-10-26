@@ -8,7 +8,7 @@ import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon
 from win32con import WM_MOUSEMOVE
 
 # 表头
@@ -65,6 +65,8 @@ try:
             config['column_width_list'] = column_width_list
         if 'center_columns' not in config:
             config['center_columns'] = [0, 3, 4]
+        if 'close_to_tray' not in config:
+            config['close_to_tray'] = 1
 except:
 
     # 默认配置
@@ -120,8 +122,9 @@ class App(QWidget):
         self.preventHeaderResizeEvent = True
         # ctrl+c
         self.copied_cells = []
-
         self.initUI()
+        self.tray_icon = TrayIcon(self)
+        self.tray_icon.show()
 
     def center(self):
         # 窗口居中
@@ -370,7 +373,7 @@ class App(QWidget):
                 pass
             # 启动qb
             subprocess.Popen([config['qb_executable']])
-            # 刷新任务栏图标
+            # 刷新任务栏托盘图标
             refresh_tray()
 
     @pyqtSlot()
@@ -533,9 +536,60 @@ class App(QWidget):
         config['full_window_height'] = self.frameGeometry().height()
         save_config(update_data=False)
 
+    def closeEvent(self, event):
+        # 主窗口的关闭按钮事件
+        if config['close_to_tray']:
+            print('关闭按钮最小化到任务栏托盘')
+            self.hide()
+            self.tray_icon.show()
+            event.ignore()
+        else:
+            sys.exit()
+
+
+class TrayIcon(QSystemTrayIcon):
+    def __init__(self, parent=None):
+        super(TrayIcon, self).__init__(parent)
+        self.showMenu()
+        self.activated.connect(self.iconClicked)
+        self.setIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+
+    def showMenu(self):
+        self.menu = QMenu()
+
+        self.showWindowAction = QAction("显示程序窗口", self, triggered=self.show_main_window)
+        self.quitAction = QAction("退出", self, triggered=self.quit)
+
+        self.menu.addAction(self.showWindowAction)
+        self.menu.addAction(self.quitAction)
+
+        self.setContextMenu(self.menu)
+
+    def iconClicked(self, reason):
+        # 1是表示单击右键
+        # 2是双击
+        # 3是单击左键
+        # 4是用鼠标中键点击
+        if reason in (2, 3, 4):
+            pw = self.parent()
+            if pw.isVisible():
+                pw.hide()
+            else:
+                pw.show()
+        print(reason)
+
+    def show_main_window(self):
+        self.parent().setWindowState(QtCore.Qt.WindowActive)
+        self.parent().show()
+
+    def quit(self):
+        # 退出程序
+        self.setVisible(False)
+        sys.exit()
+
 
 def refresh_tray():
-    # 刷新任务栏图标, 去掉强制关闭进程后的残留图标
+    # 刷新任务栏托盘图标, 去掉强制关闭进程后的残留图标
     hShellTrayWnd = win32gui.FindWindow("Shell_trayWnd", "")
     hTrayNotifyWnd = win32gui.FindWindowEx(hShellTrayWnd, 0, "TrayNotifyWnd", None)
     hSysPager = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'SysPager', None)
