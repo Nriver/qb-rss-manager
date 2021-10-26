@@ -27,17 +27,19 @@ def clean_data_list():
     return cleaned_data
 
 
-def save_config():
-    # 保存配置
+def save_config(update_data=True):
+    print('保存配置', '更新数据', update_data)
     with open('config.json', 'w', encoding='utf-8') as f:
-        config['data_list'] = clean_data_list()
+        if update_data:
+            config['data_list'] = clean_data_list()
         f.write(json.dumps(config, ensure_ascii=False, indent=4))
 
 
 try:
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.loads(f.read())
-        data_list = config['data_list']
+        # 拷贝一份数据, 防止不需要更新的时候把配置更新了
+        data_list = config['data_list'][::]
         if 'auto_save' not in config:
             config['auto_save'] = 0
         if 'max_row_size' not in config:
@@ -50,7 +52,7 @@ try:
                     row = x[:4] + ['', ] + x[4:]
                     data_list_fix.append(row)
                 data_list = data_list_fix
-                config['data_list'] = data_list
+                config['data_list'] = data_list[::]
         except:
             pass
 
@@ -61,7 +63,8 @@ try:
         if 'column_width_list' not in config:
             column_width_list = [80, 260, 210, 65, 62, 370, 290]
             config['column_width_list'] = column_width_list
-
+        if 'center_columns' not in config:
+            config['center_columns'] = [0, 3, 4]
 except:
 
     # 默认配置
@@ -85,7 +88,6 @@ except:
     config['max_row_size'] = max_row_size
 
     with open('config.json', 'w', encoding='utf-8') as f:
-        config['data_list'] = data_list
         f.write(json.dumps(config, ensure_ascii=False, indent=4))
     # 生成配置直接退出
     sys.exit()
@@ -193,7 +195,7 @@ class App(QWidget):
             for cx, row in enumerate(data_list):
                 for cy, d in enumerate(row):
                     item = QTableWidgetItem(d)
-                    if cy in (0, 3, 4):
+                    if cy in config['center_columns']:
                         item.setTextAlignment(Qt.AlignCenter)
                     self.tableWidget.setItem(cx, cy, item)
 
@@ -266,7 +268,7 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         print(column_width_list_tmp)
         config['column_width_list'] = column_width_list_tmp
-        save_config()
+        save_config(update_data=False)
 
     @pyqtSlot()
     def on_double_click(self):
@@ -290,7 +292,7 @@ class App(QWidget):
         for i in range(len(headers)):
             item1 = QTableWidgetItem(data_list[r][i])
             item2 = QTableWidgetItem(data_list[r - 1][i])
-            if i in (0, 3, 4):
+            if i in config['center_columns']:
                 item1.setTextAlignment(Qt.AlignCenter)
                 item2.setTextAlignment(Qt.AlignCenter)
             self.tableWidget.setItem(r, i, item1)
@@ -316,7 +318,7 @@ class App(QWidget):
         for i in range(len(headers)):
             item1 = QTableWidgetItem(data_list[r][i])
             item2 = QTableWidgetItem(data_list[r + 1][i])
-            if i in (0, 3, 4):
+            if i in config['center_columns']:
                 item1.setTextAlignment(Qt.AlignCenter)
                 item2.setTextAlignment(Qt.AlignCenter)
             self.tableWidget.setItem(r, i, item1)
@@ -404,7 +406,7 @@ class App(QWidget):
         for cx, row in enumerate(data_list):
             for cy, d in enumerate(row):
                 item = QTableWidgetItem(d)
-                if cy in (0, 3, 4):
+                if cy in config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
 
@@ -435,7 +437,10 @@ class App(QWidget):
                     # 忽略跨行数据 防止数组越界
                     continue
                 print('粘贴数据', new_r, new_c, cell.data())
-                self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell.data()))
+                item = QTableWidgetItem(cell.data())
+                if new_c in config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(new_r, new_c, item)
                 data_list[new_r][new_c] = cell.data()
                 print('粘贴结果', data_list)
             # 保存结果
@@ -515,7 +520,10 @@ class App(QWidget):
         data_list[r] = ['' for _ in range(len(headers))]
         cx = r
         for cy in range(len(headers)):
-            self.tableWidget.setItem(cx, cy, QTableWidgetItem(''))
+            item = QTableWidgetItem('')
+            if cy in config['center_columns']:
+                item.setTextAlignment(Qt.AlignCenter)
+            self.tableWidget.setItem(cx, cy, item)
 
         self.tableWidget.blockSignals(False)
 
@@ -523,7 +531,7 @@ class App(QWidget):
         print("Window has been resized")
         config['full_window_width'] = self.frameGeometry().width()
         config['full_window_height'] = self.frameGeometry().height()
-        save_config()
+        save_config(update_data=False)
 
 
 def refresh_tray():
