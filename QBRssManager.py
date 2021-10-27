@@ -111,7 +111,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.0.3 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.0.4 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -614,6 +614,7 @@ class TrayIcon(QSystemTrayIcon):
 
 
 def refresh_tray():
+    print('刷新任务栏托盘图标')
     # 刷新任务栏托盘图标, 去掉强制关闭进程后的残留图标
     hShellTrayWnd = win32gui.FindWindow("Shell_trayWnd", "")
     hTrayNotifyWnd = win32gui.FindWindowEx(hShellTrayWnd, 0, "TrayNotifyWnd", None)
