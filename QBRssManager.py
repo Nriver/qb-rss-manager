@@ -143,6 +143,7 @@ class App(QWidget):
         self.layout_button.addWidget(self.move_up_button)
         self.layout_button.addWidget(self.move_down_button)
         self.layout_button.addWidget(self.clean_row_button)
+        self.layout_button.addWidget(self.load_config_button)
         self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.output_button)
         self.layout = QVBoxLayout()
@@ -163,6 +164,9 @@ class App(QWidget):
         self.move_up_button.clicked.connect(self.on_move_up_click)
         self.move_down_button = QPushButton('向下移动', self)
         self.move_down_button.clicked.connect(self.on_move_down_click)
+
+        self.load_config_button = QPushButton('恢复上一次保存配置', self)
+        self.load_config_button.clicked.connect(self.on_load_config_click)
 
         self.save_button = QPushButton('保存配置', self)
         self.save_button.clicked.connect(self.on_save_click)
@@ -375,6 +379,27 @@ class App(QWidget):
             subprocess.Popen([config['qb_executable']])
             # 刷新任务栏托盘图标
             refresh_tray()
+
+    @pyqtSlot()
+    def on_load_config_click(self):
+        self.tableWidget.blockSignals(True)
+        # 这里要覆盖变量
+        global config
+        global data_list
+        with open('config.json', 'r', encoding='utf-8') as f:
+            config = json.loads(f.read())
+            data_list = config['data_list'][::]
+            if len(data_list) < config['max_row_size']:
+                for _ in range(config['max_row_size'] - len(data_list)):
+                    data_list.append(['' for x in range(len(headers))])
+            # 重新渲染数据
+            for cx, row in enumerate(data_list):
+                for cy, d in enumerate(row):
+                    item = QTableWidgetItem(d)
+                    if cy in config['center_columns']:
+                        item.setTextAlignment(Qt.AlignCenter)
+                    self.tableWidget.setItem(cx, cy, item)
+        self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
     def on_save_click(self):
