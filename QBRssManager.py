@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -75,6 +76,8 @@ try:
             config['center_columns'] = [0, 3, 4]
         if 'close_to_tray' not in config:
             config['close_to_tray'] = 1
+        if 'date_auto_zfill' not in config:
+            config['date_auto_zfill'] = 0
 except:
 
     # 默认配置
@@ -96,6 +99,7 @@ except:
     config['data_list'] = data_list
     config['auto_save'] = auto_save
     config['max_row_size'] = max_row_size
+    config['date_auto_zfill'] = 0
 
     with open('config.json', 'w', encoding='utf-8') as f:
         f.write(json.dumps(config, ensure_ascii=False, indent=4))
@@ -110,6 +114,22 @@ if len(data_list) < config['max_row_size']:
 
 def format_path(s):
     return s.replace('\\', '/').replace('//', '/')
+
+
+def try_convert_time(s):
+    """
+    简单粗暴的字符串转换年月
+    比如 2021.11 2021-11 2021/11 转换成2021年11月
+    """
+    res = re.match(r'^(\d{4})[\.\-\_\\/](\d{1,2})$', s)
+    if res:
+        year = str(res[1])
+        month = str(res[2])
+
+        if config['date_auto_zfill'] == 1:
+            month = month.zfill(2)
+        s = f'{year}年{month}月'
+    return s
 
 
 qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
@@ -352,6 +372,12 @@ class App(QWidget):
         c = self.tableWidget.currentColumn()
         text = self.tableWidget.currentItem().text()
         print(r, c, text)
+
+        # 第一列时间进行特殊转换处理
+        if c == 0:
+            text = try_convert_time(text)
+            self.tableWidget.currentItem().setText(text)
+
         # 修改数据
         data_list[r][c] = text
         print('on_cell_changed 结果', data_list)
