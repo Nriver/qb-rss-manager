@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetIte
 from win32con import WM_MOUSEMOVE
 
 # 表头
-headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址']
+headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址', '种子类型']
 
 # 配置
 config = {}
@@ -53,6 +53,14 @@ try:
                     data_list_fix.append(row)
                 data_list = data_list_fix
                 config['data_list'] = data_list[::]
+            if len(config['data_list'][0]) == 7:
+                data_list_fix = []
+                for x in config['data_list']:
+                    row = x[::] + ['', ]
+                    data_list_fix.append(row)
+                data_list = data_list_fix
+                config['data_list'] = data_list[::]
+                config['column_width_list'] = config['column_width_list'] + [80, ]
         except:
             pass
 
@@ -61,7 +69,7 @@ try:
         if 'full_window_height' not in config:
             config['full_window_height'] = 800
         if 'column_width_list' not in config:
-            column_width_list = [80, 260, 210, 65, 62, 370, 290]
+            column_width_list = [80, 260, 210, 65, 62, 370, 290, 80]
             config['column_width_list'] = column_width_list
         if 'center_columns' not in config:
             config['center_columns'] = [0, 3, 4]
@@ -111,7 +119,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.0.4 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.0.5 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -361,7 +369,8 @@ class App(QWidget):
                 "mustContain": x[2],
                 "mustNotContain": x[3],
                 "savePath": format_path(x[5]),
-                "affectedFeeds": [x[6], ]
+                "affectedFeeds": [x[6], ],
+                "assignedCategory": x[7]
             }
 
             output_data[x[0] + ' ' + x[1]] = item
