@@ -139,7 +139,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.0.5 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.0.6 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -485,9 +485,47 @@ class App(QWidget):
             print('ctrl c')
             self.copied_cells = sorted(self.tableWidget.selectedIndexes())
             print(f'复制了 {len(self.copied_cells)} 个')
+            # 清空剪贴板
+            app.clipboard().setText('')
         elif event.key() == Qt.Key_V and (event.modifiers() & Qt.ControlModifier):
             print('ctrl v')
             self.tableWidget.blockSignals(True)
+
+            # 如果剪贴板有内容 优先粘贴剪贴板
+            # 可以兼容excel表格的复制粘贴
+            if app.clipboard().text():
+                print('导入excel')
+                r = self.tableWidget.currentRow()
+                c = self.tableWidget.currentColumn()
+                rows = app.clipboard().text().split('\n')
+                for b_r, row in enumerate(rows):
+                    if not row:
+                        continue
+                    cells = row.split('\t')
+                    print(cells)
+
+                    for b_c, cell_data in enumerate(cells):
+                        new_r = b_r + r
+                        new_c = b_c + c
+                        if new_c > (len(headers) - 1):
+                            # 忽略跨行数据 防止数组越界
+                            continue
+                        print('粘贴数据', new_r, new_c, cell_data)
+                        item = QTableWidgetItem(cell_data)
+                        if new_c in config['center_columns']:
+                            item.setTextAlignment(Qt.AlignCenter)
+
+                        self.tableWidget.setItem(new_r, new_c, item)
+                        data_list[new_r][new_c] = cell_data
+                        print('粘贴结果', data_list)
+                    # 保存结果
+                    if config['auto_save']:
+                        save_config()
+                # app.clipboard().setText('')
+                self.tableWidget.blockSignals(False)
+
+                return
+
             if not self.copied_cells:
                 return
             r = self.tableWidget.currentRow() - self.copied_cells[0].row()
