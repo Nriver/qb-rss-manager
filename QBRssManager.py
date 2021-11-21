@@ -78,11 +78,17 @@ try:
             config['close_to_tray'] = 1
         if 'date_auto_zfill' not in config:
             config['date_auto_zfill'] = 0
+        if 'feeds_json_path' not in config:
+            config['feeds_json_path'] = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
+        if 'rss_article_folder' not in config:
+            config['rss_article_folder'] = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
 except:
 
     # 默认配置
     # rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
     rules_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\download_rules.json')
+    feeds_json_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
+    rss_article_folder = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
     # 保存后打开qb主程序 1为自动打开 其它值不自动打开
     open_qb_after_export = 1
     # qb主程序路径
@@ -100,6 +106,8 @@ except:
     config['auto_save'] = auto_save
     config['max_row_size'] = max_row_size
     config['date_auto_zfill'] = 0
+    config['feeds_json_path'] = feeds_json_path
+    config['rss_article_folder'] = rss_article_folder
 
     with open('config.json', 'w', encoding='utf-8') as f:
         f.write(json.dumps(config, ensure_ascii=False, indent=4))
@@ -238,6 +246,7 @@ class App(QWidget):
 
         # 宽度自适应 效果不太好
         # self.tableWidget.resizeColumnsToContents()
+        # self.tableWidget.resizeColumnsToContents()
         # 拉长
         header = self.tableWidget.horizontalHeader()
         # header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
@@ -266,6 +275,9 @@ class App(QWidget):
         # 右键菜单
         self.tableWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.tableWidget.customContextMenuRequested.connect(self.generateMenu)
+
+        # 输入提示
+        self.tableWidget.type_hints = []
 
     def generateMenu(self, pos):
         # 右键弹窗菜单
@@ -308,8 +320,38 @@ class App(QWidget):
     @pyqtSlot()
     def on_double_click(self):
         # 双击事件
+        print("on_double_click()")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
+            # TODO: 包含和排除列特殊弹窗处理
+            if (currentQTableWidgetItem.column() in (2, 3)):
+                try:
+                    self.tableWidget.type_hints = []
+                    # 当前行feed路径数据
+                    current_row_feed = data_list[currentQTableWidgetItem.row()][6]
+                    print('current_row_feed', current_row_feed)
+                    # 读取qb feed json数据
+                    feed_uid = None
+                    with open(config['feeds_json_path'], 'r', encoding='utf-8') as f:
+                        feeds_json = json.loads(f.read())
+                        print('feeds_json', feeds_json)
+                        for x in feeds_json:
+                            if current_row_feed == feeds_json[x]['url']:
+                                feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
+                                print('feed_uid', feed_uid)
+                                break
+                    if feed_uid:
+                        # 读取rss feed的标题 写入 type_hints 列表
+                        article_titles = []
+                        article_path = config['rss_article_folder'] + '/' + feed_uid + '.json'
+                        with open(article_path, 'r', encoding='utf-8') as f:
+                            article = json.loads(f.read())
+                            for x in article:
+                                article_titles.append(x['title'])
+                        self.tableWidget.type_hints = article_titles
+                        print(self.tableWidget.type_hints)
+                except Exception as e:
+                    print('exception', e)
 
     @pyqtSlot()
     def on_move_up_click(self):
@@ -377,6 +419,8 @@ class App(QWidget):
         if c == 0:
             text = try_convert_time(text)
             self.tableWidget.currentItem().setText(text)
+
+        # TODO: 消除包含和排除列的弹窗
 
         # 修改数据
         data_list[r][c] = text
