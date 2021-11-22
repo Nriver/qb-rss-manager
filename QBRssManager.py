@@ -82,6 +82,8 @@ try:
             config['feeds_json_path'] = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
         if 'rss_article_folder' not in config:
             config['rss_article_folder'] = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
+        if 'text_browser_height' not in config:
+            config['text_browser_height'] = 150
 except:
 
     # 默认配置
@@ -269,7 +271,7 @@ class App(QWidget):
         # 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
         self.text_browser.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.text_browser.setMaximumHeight(150)
+        self.text_browser.setMaximumHeight(config['text_browser_height'])
 
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.layout_button)
@@ -438,6 +440,7 @@ class App(QWidget):
                 return True
         except Exception as e:
             print('exception', e)
+        self.text_browser.setText('没找到RSS数据呀')
 
     @pyqtSlot()
     def on_double_click(self):
@@ -448,6 +451,7 @@ class App(QWidget):
 
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
+                self.text_browser.clear()
                 res = self.load_type_hints(currentQTableWidgetItem.row())
                 if res:
                     include_text = data_list[currentQTableWidgetItem.row()][2]
@@ -626,6 +630,7 @@ class App(QWidget):
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
+                self.text_browser.clear()
                 res = self.load_type_hints(currentQTableWidgetItem.row())
                 if res:
                     include_text = data_list[currentQTableWidgetItem.row()][2]
