@@ -219,8 +219,15 @@ class CustomQTextBrowser(QTextBrowser):
             # 保留匹配的
             filtered_hints = []
             for type_hint in type_hints:
-                if all(x in type_hint for x in include_text.split()) and all(
-                        x not in type_hint for x in exclude_text.split()):
+                # 包含关键字
+                flag1 = False
+                # 不包含关键字
+                flag2 = False
+                if include_text:
+                    flag1 = all(x.lower() in type_hint.lower() for x in include_text.split(' '))
+                if exclude_text:
+                    flag2 = all(x.lower() in type_hint.lower() for x in exclude_text.split(' '))
+                if flag1 and not flag2:
                     filtered_hints.append(type_hint)
             if filtered_hints:
                 self.parent_app.text_browser.append('\n'.join(filtered_hints))
