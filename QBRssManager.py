@@ -230,7 +230,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.0.6 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.1.0 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -409,6 +409,36 @@ class App(QWidget):
         config['column_width_list'] = column_width_list_tmp
         save_config(update_data=False)
 
+    def load_type_hints(self, row):
+        try:
+            self.tableWidget.type_hints = []
+            # 当前行feed路径数据
+            current_row_feed = data_list[row][6]
+            print('current_row_feed', current_row_feed)
+            # 读取qb feed json数据
+            feed_uid = None
+            with open(config['feeds_json_path'], 'r', encoding='utf-8') as f:
+                feeds_json = json.loads(f.read())
+                print('feeds_json', feeds_json)
+                for x in feeds_json:
+                    if current_row_feed == feeds_json[x]['url']:
+                        feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
+                        print('feed_uid', feed_uid)
+                        break
+            if feed_uid:
+                # 读取rss feed的标题 写入 type_hints 列表
+                article_titles = []
+                article_path = config['rss_article_folder'] + '/' + feed_uid + '.json'
+                with open(article_path, 'r', encoding='utf-8') as f:
+                    article = json.loads(f.read())
+                    for x in article:
+                        article_titles.append(x['title'])
+                self.tableWidget.type_hints = article_titles
+                print(self.tableWidget.type_hints)
+                return True
+        except Exception as e:
+            print('exception', e)
+
     @pyqtSlot()
     def on_double_click(self):
         # 双击事件
@@ -418,36 +448,11 @@ class App(QWidget):
 
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
-                try:
-                    self.tableWidget.type_hints = []
-                    # 当前行feed路径数据
-                    current_row_feed = data_list[currentQTableWidgetItem.row()][6]
-                    print('current_row_feed', current_row_feed)
-                    # 读取qb feed json数据
-                    feed_uid = None
-                    with open(config['feeds_json_path'], 'r', encoding='utf-8') as f:
-                        feeds_json = json.loads(f.read())
-                        print('feeds_json', feeds_json)
-                        for x in feeds_json:
-                            if current_row_feed == feeds_json[x]['url']:
-                                feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
-                                print('feed_uid', feed_uid)
-                                break
-                    if feed_uid:
-                        # 读取rss feed的标题 写入 type_hints 列表
-                        article_titles = []
-                        article_path = config['rss_article_folder'] + '/' + feed_uid + '.json'
-                        with open(article_path, 'r', encoding='utf-8') as f:
-                            article = json.loads(f.read())
-                            for x in article:
-                                article_titles.append(x['title'])
-                        self.tableWidget.type_hints = article_titles
-                        print(self.tableWidget.type_hints)
-                        include_text = data_list[currentQTableWidgetItem.row()][2]
-                        exclude_text = data_list[currentQTableWidgetItem.row()][3]
-                        self.text_browser.filter_type_hint(include_text, exclude_text)
-                except Exception as e:
-                    print('exception', e)
+                res = self.load_type_hints(currentQTableWidgetItem.row())
+                if res:
+                    include_text = data_list[currentQTableWidgetItem.row()][2]
+                    exclude_text = data_list[currentQTableWidgetItem.row()][3]
+                    self.text_browser.filter_type_hint(include_text, exclude_text)
 
     @pyqtSlot()
     def on_move_up_click(self):
@@ -616,6 +621,17 @@ class App(QWidget):
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
             print('edit cell')
+            # PyQt5.QtCore.QModelIndex
+            currentQTableWidgetItem = self.tableWidget.currentItem()
+            print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
+            # 读取feed数据 用于过滤输入
+            if (currentQTableWidgetItem.column() in (2, 3)):
+                res = self.load_type_hints(currentQTableWidgetItem.row())
+                if res:
+                    include_text = data_list[currentQTableWidgetItem.row()][2]
+                    exclude_text = data_list[currentQTableWidgetItem.row()][3]
+                    self.text_browser.filter_type_hint(include_text, exclude_text)
+
             self.tableWidget.edit(self.tableWidget.currentIndex())
 
         #   复制粘贴
