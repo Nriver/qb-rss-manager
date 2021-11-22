@@ -181,7 +181,9 @@ class CustomEditor(QtWidgets.QLineEdit):
         print('process_text()', text)
         print('self.index', self.index.row(), self.index.column())
         data_list[self.index.row()][self.index.column()] = text
-        self.parent_app.text_browser.filter_type_hint(text)
+        include_text = data_list[self.index.row()][2]
+        exclude_text = data_list[self.index.row()][3]
+        self.parent_app.text_browser.filter_type_hint(include_text, exclude_text)
 
 
 class CustomDelegate(QtWidgets.QStyledItemDelegate):
@@ -204,18 +206,19 @@ class CustomQTextBrowser(QTextBrowser):
         super().__init__(parent_app)
         self.parent_app = parent_app
 
-    def filter_type_hint(self, text):
+    def filter_type_hint(self, include_text, exclude_text):
         type_hints = self.parent_app.tableWidget.type_hints
         # 清空
         self.parent_app.text_browser.clear()
-        if text == '':
+        if include_text.strip() == '' and exclude_text.strip() == '':
             # 特殊处理 为空则匹配所有
             self.parent_app.text_browser.append('\n'.join(type_hints))
         else:
             # 保留匹配的
             filtered_hints = []
             for type_hint in type_hints:
-                if all(x in type_hint for x in text.split()):
+                if all(x in type_hint for x in include_text.split()) and all(
+                        x not in type_hint for x in exclude_text.split()):
                     filtered_hints.append(type_hint)
             if filtered_hints:
                 self.parent_app.text_browser.append('\n'.join(filtered_hints))
@@ -440,7 +443,9 @@ class App(QWidget):
                                 article_titles.append(x['title'])
                         self.tableWidget.type_hints = article_titles
                         print(self.tableWidget.type_hints)
-                        self.text_browser.filter_type_hint(currentQTableWidgetItem.text())
+                        include_text = data_list[currentQTableWidgetItem.row()][2]
+                        exclude_text = data_list[currentQTableWidgetItem.row()][3]
+                        self.text_browser.filter_type_hint(include_text, exclude_text)
                 except Exception as e:
                     print('exception', e)
 
