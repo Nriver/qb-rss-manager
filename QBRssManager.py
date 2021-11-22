@@ -9,7 +9,7 @@ import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser
 from win32con import WM_MOUSEMOVE
 
 # 表头
@@ -143,6 +143,86 @@ def try_convert_time(s):
 qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
 
 
+class CustomEditor(QtWidgets.QLineEdit):
+    # 自定义一个 Editor
+    # 输入过程中的事件捕获在这里定义
+    # QLineEdit
+
+    def __init__(self, parent, index, parent_app):
+        super(CustomEditor, self).__init__(parent)
+        self.parent = parent
+        self.index = index
+        self.parent_app = parent_app
+        # 按键 事件
+        self.keyPressEvent = self.custom_keypress
+        # 输入法 不会触发keyPressEvent!
+        # 需要对inputMethodEvent单独处理
+        self.inputMethodEvent = self.custom_input_method_event
+
+    def custom_input_method_event(self, event):
+        # 自定义 输入法 事件处理
+        # PyQt5.QtGui.QInputMethodEvent
+        print('cusstom IME', event)
+        # 原始事件
+        super(CustomEditor, self).inputMethodEvent(event)
+        # 原始事件处理完才能得到最新的文本
+        self.process_text(self.text())
+
+    def custom_keypress(self, event):
+        # 自定义 按键 事件处理
+        print('custom keypress')
+        # 原始事件
+        super(CustomEditor, self).keyPressEvent(event)
+        # 原始事件处理完才能得到最新的文本
+        self.process_text(self.text())
+
+    def process_text(self, text):
+        # 统一处理输入事件的文字
+        print('process_text()', text)
+        print('self.index', self.index.row(), self.index.column())
+        data_list[self.index.row()][self.index.column()] = text
+        self.parent_app.text_browser.filter_type_hint(text)
+
+
+class CustomDelegate(QtWidgets.QStyledItemDelegate):
+    # 要对表格编辑进行特殊处理, 必须自己实现一个QStyledItemDelegate/QItemDelegate
+
+    def __init__(self, parent_app):
+        super().__init__(parent_app)
+        self.parent_app = parent_app
+
+    def createEditor(self, parent, option, index):
+        # 编辑器初始化
+        print('createEditor()')
+        editor = CustomEditor(parent, index, self.parent_app)
+        return editor
+
+
+class CustomQTextBrowser(QTextBrowser):
+
+    def __init__(self, parent_app):
+        super().__init__(parent_app)
+        self.parent_app = parent_app
+
+    def filter_type_hint(self, text):
+        type_hints = self.parent_app.tableWidget.type_hints
+        # 清空
+        self.parent_app.text_browser.clear()
+        if text == '':
+            # 特殊处理 为空则匹配所有
+            self.parent_app.text_browser.append('\n'.join(type_hints))
+        else:
+            # 保留匹配的
+            filtered_hints = []
+            for type_hint in type_hints:
+                if all(x in type_hint for x in text.split()):
+                    filtered_hints.append(type_hint)
+            if filtered_hints:
+                self.parent_app.text_browser.append('\n'.join(filtered_hints))
+            else:
+                self.parent_app.text_browser.append('暂时没有找到相关的feed')
+
+
 class App(QWidget):
 
     def __init__(self):
@@ -182,9 +262,16 @@ class App(QWidget):
         self.layout_button.addWidget(self.load_config_button)
         self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.output_button)
+
+        # 固定位置方便输出
+        self.text_browser = CustomQTextBrowser(self)
+        self.text_browser.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.text_browser.setMaximumHeight(150)
+
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.layout_button)
         self.layout.addWidget(self.tableWidget)
+        self.layout.addWidget(self.text_browser)
         self.setLayout(self.layout)
         # 居中显示
         self.center()
@@ -276,8 +363,10 @@ class App(QWidget):
         self.tableWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.tableWidget.customContextMenuRequested.connect(self.generateMenu)
 
-        # 输入提示
-        self.tableWidget.type_hints = []
+        print('delegate 初始化')
+        # 自定义处理
+        self.tableWidget.setItemDelegateForColumn(2, CustomDelegate(self))
+        self.tableWidget.setItemDelegateForColumn(3, CustomDelegate(self))
 
     def generateMenu(self, pos):
         # 右键弹窗菜单
@@ -323,7 +412,8 @@ class App(QWidget):
         print("on_double_click()")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
-            # TODO: 包含和排除列特殊弹窗处理
+
+            # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
                 try:
                     self.tableWidget.type_hints = []
@@ -350,6 +440,7 @@ class App(QWidget):
                                 article_titles.append(x['title'])
                         self.tableWidget.type_hints = article_titles
                         print(self.tableWidget.type_hints)
+                        self.text_browser.filter_type_hint(currentQTableWidgetItem.text())
                 except Exception as e:
                     print('exception', e)
 
@@ -419,8 +510,6 @@ class App(QWidget):
         if c == 0:
             text = try_convert_time(text)
             self.tableWidget.currentItem().setText(text)
-
-        # TODO: 消除包含和排除列的弹窗
 
         # 修改数据
         data_list[r][c] = text
