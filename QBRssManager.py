@@ -275,10 +275,15 @@ class App(QWidget):
         self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.output_button)
 
-        # 固定位置方便输出
+        # 文本框 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
         self.text_browser.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.text_browser.setMaximumHeight(config['text_browser_height'])
+        # 文本框 去掉右键菜单
+        self.text_browser.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # 文本框滚动条去掉右键菜单
+        self.text_browser.verticalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        self.text_browser.horizontalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
 
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.layout_button)
@@ -371,9 +376,12 @@ class App(QWidget):
 
         self.tableWidget.keyPressEvent = self.handle_key_press
 
-        # 右键菜单
+        # 表格 右键菜单
         self.tableWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.tableWidget.customContextMenuRequested.connect(self.generateMenu)
+        # 表格 滚动条去掉右键菜单
+        self.tableWidget.verticalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        self.tableWidget.horizontalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
 
         print('delegate 初始化')
         # 自定义处理
