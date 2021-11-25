@@ -281,6 +281,7 @@ class App(QWidget):
         self.text_browser.setMaximumHeight(config['text_browser_height'])
         # 文本框 去掉右键菜单
         self.text_browser.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.text_browser.customContextMenuRequested.connect(self.generateTextBrowserMenu)
         # 文本框滚动条去掉右键菜单
         self.text_browser.verticalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.text_browser.horizontalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
@@ -387,6 +388,35 @@ class App(QWidget):
         # 自定义处理
         self.tableWidget.setItemDelegateForColumn(2, CustomDelegate(self))
         self.tableWidget.setItemDelegateForColumn(3, CustomDelegate(self))
+
+    def generateTextBrowserMenu(self, pos):
+        """文本框自定义右键菜单"""
+        time.sleep(0)
+        print("pos======", pos)
+        a = QPoint(pos.x(), pos.y())
+
+        self.text_browser_menu = QMenu(self)
+
+        self.copy_text_action = QAction("复制")
+        self.select_all_action = QAction("全选")
+
+        self.copy_text_action.triggered.connect(self.on_copy_text_click)
+        self.select_all_action.triggered.connect(self.on_select_all_click)
+
+        self.text_browser_menu.addAction(self.copy_text_action)
+        self.text_browser_menu.addAction(self.select_all_action)
+
+        self.text_browser_menu.exec_(self.text_browser.mapToGlobal(a))
+
+    def on_copy_text_click(self):
+        """文本框右键菜单 复制 按钮事件"""
+        print('on_copy_text_click()')
+        self.text_browser.copy()
+
+    def on_select_all_click(self):
+        """文本框右键菜单 全选 按钮事件"""
+        print('on_select_all_click()')
+        self.text_browser.selectAll()
 
     def generateMenu(self, pos):
         # 右键弹窗菜单
