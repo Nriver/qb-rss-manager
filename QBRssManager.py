@@ -7,9 +7,9 @@ import time
 
 import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSlot, Qt, QPoint
+from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter
 from win32con import WM_MOUSEMOVE
 
 # 表头
@@ -82,8 +82,8 @@ try:
             config['feeds_json_path'] = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
         if 'rss_article_folder' not in config:
             config['rss_article_folder'] = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
-        if 'text_browser_height' not in config:
-            config['text_browser_height'] = 150
+        if 'text_browser_height' in config:
+            del config['text_browser_height']
 except:
 
     # 默认配置
@@ -278,23 +278,47 @@ class App(QWidget):
         # 文本框 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
         self.text_browser.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        self.text_browser.setMaximumHeight(config['text_browser_height'])
+        # self.text_browser.setMaximumHeight(config['text_browser_height'])
+
         # 文本框 去掉右键菜单
         self.text_browser.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.text_browser.customContextMenuRequested.connect(self.generateTextBrowserMenu)
         # 文本框滚动条去掉右键菜单
         self.text_browser.verticalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.text_browser.horizontalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        self.text_browser.resizeEvent = self.custom_text_browser_resize_event
 
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.layout_button)
-        self.layout.addWidget(self.tableWidget)
-        self.layout.addWidget(self.text_browser)
+
+        # 增加QSplitter, 让文本框组件直接通过拖拽修改大小
+        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter.addWidget(self.tableWidget)
+        self.splitter.addWidget(self.text_browser)
+
+        try:
+            self.splitter.restoreState(QByteArray.fromHex(bytes(config['splitter_state'], 'ascii')))
+
+        except Exception as e:
+            print('未发现splitter状态, 使用默认分隔比例')
+            self.splitter.setStretchFactor(0, 8)
+            self.splitter.setStretchFactor(1, 1)
+
+        # 实时预览
+        # self.splitter.setOpaqueResize(False)
+        self.layout.addWidget(self.splitter)
         self.setLayout(self.layout)
         # 居中显示
         self.center()
         self.preventHeaderResizeEvent = False
         self.show()
+
+    def custom_text_browser_resize_event(self, event):
+        # 文本框大小变化时, 记录splitter的状态
+        print("custom_resize_event", self.height, self.tableWidget.height(), self.text_browser.height())
+        print("splitter_state", self.splitter.saveState())
+        config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
+        save_config(update_data=False)
 
     def createButton(self):
         self.output_button = QPushButton('生成RSS订阅下载规则', self)
