@@ -567,7 +567,7 @@ class App(QWidget):
         if not keyword:
             return
 
-        if self.search_window.last_data_update_timestamp != self.data_update_timestamp:
+        if self.search_window.last_search_keyword != keyword or self.search_window.last_data_update_timestamp != self.data_update_timestamp:
             logger.info('数据有变动, 重新搜索')
             self.last_search_index = 0
             self.search_window.search_result = []
@@ -583,15 +583,17 @@ class App(QWidget):
             # 如果有匹配的结果, 进行跳转
             if self.search_window.search_result:
                 self.search_window.last_data_update_timestamp = self.data_update_timestamp
+                self.search_window.last_search_keyword = keyword
         else:
             logger.info('继续遍历上次搜索的结果')
             self.last_search_index = (self.last_search_index + 1) % len(self.search_window.search_result)
 
-        logger.info(
-            f"跳转 {self.search_window.search_result[self.last_search_index]['r'], self.search_window.search_result[self.last_search_index]['c']}")
-        self.tableWidget.setCurrentCell(self.search_window.search_result[self.last_search_index]['r'],
-                                        self.search_window.search_result[self.last_search_index]['c'])
-        self.activateWindow()
+        if self.search_window.search_result:
+            logger.info(
+                f"跳转 {self.search_window.search_result[self.last_search_index]['r'], self.search_window.search_result[self.last_search_index]['c']}")
+            self.tableWidget.setCurrentCell(self.search_window.search_result[self.last_search_index]['r'],
+                                            self.search_window.search_result[self.last_search_index]['c'])
+            self.activateWindow()
 
     @pyqtSlot()
     def on_double_click(self):
