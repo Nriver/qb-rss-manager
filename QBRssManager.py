@@ -9,7 +9,8 @@ import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter, \
+    QLineEdit
 from loguru import logger
 from win32con import WM_MOUSEMOVE
 
@@ -237,8 +238,25 @@ class CustomQTextBrowser(QTextBrowser):
 
 
 class SearchWindow(QWidget):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
+        self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+        self.lineEdit = QLineEdit()
+
+        doSearchButton = QPushButton("搜索")
+        doSearchButton.clicked.connect(self.parent.do_search)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.lineEdit)
+        layout.addWidget(doSearchButton)
+        self.setLayout(layout)
+        self.setWindowTitle("搜索")
+
+        flags = Qt.WindowFlags()
+        # 窗口永远在最前面
+        flags |= Qt.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
 
 
 class App(QWidget):
@@ -260,10 +278,17 @@ class App(QWidget):
         self.tray_icon = TrayIcon(self)
         self.tray_icon.show()
 
-        self.search_window = SearchWindow()
+        # 防止窗口超出屏幕
+        pos = self.pos()
+        if pos.x() < 0:
+            pos.setX(0)
+        if pos.y() < 0:
+            pos.setY(0)
+        logger.info(f'主窗口位置 {pos.x(), pos.y()}')
+        self.move(pos)
 
-        pos = self.search_window.pos()
-        logger.info(f'self.search_window {pos.x(), pos.y()}')
+        # 初始化搜索框
+        self.search_window = SearchWindow(self)
 
     def center(self):
         # 窗口居中
@@ -521,6 +546,10 @@ class App(QWidget):
         except Exception as e:
             logger.info(f'exception {e}')
         self.text_browser.setText('没找到RSS数据呀')
+
+    def do_search(self):
+        """搜索框按钮事件"""
+        logger.info('do_search()')
 
     @pyqtSlot()
     def on_double_click(self):
@@ -792,6 +821,15 @@ class App(QWidget):
             if config['auto_save']:
                 save_config()
             self.tableWidget.blockSignals(False)
+
+        # 搜索
+        elif event.key() == Qt.Key_F and (event.modifiers() & Qt.ControlModifier):
+            logger.info('ctrl f')
+            pos = self.search_window.pos()
+            logger.info(f'self.search_window {pos.x(), pos.y()}')
+            self.search_window.show()
+            # 获取焦点
+            self.search_window.setFocus()
 
         # 删除数据
         elif event.key() == Qt.Key_Delete:
