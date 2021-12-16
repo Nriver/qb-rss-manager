@@ -279,6 +279,8 @@ class SearchWindow(QWidget):
         if event.key() in (Qt.Key_Enter, Qt.Key_Return):
             logger.info('搜索')
             self.parent.do_search()
+        elif event.key() in (Qt.Key_Escape,):
+            self.close()
 
 
 class App(QWidget):
@@ -956,6 +958,10 @@ class App(QWidget):
             self.tableWidget.blockSignals(False)
         elif event.key() in (Qt.Key_F3,):
             self.do_search()
+
+        elif event.key() in (Qt.Key_Escape,):
+            if self.search_window and self.search_window.isVisible():
+                self.search_window.close()
 
     # return
 
