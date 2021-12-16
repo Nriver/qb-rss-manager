@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 
 import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -241,15 +242,23 @@ class SearchWindow(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        # 记录上一次搜索的关键字 用于多个搜索结果跳转
+        self.last_search_keyword = ''
+        # 记录上一次搜索的结果位置
+        self.last_search_index = 0
+        # 检查数据是否有更新, 如果有更新, 需要重新搜索
+        self.last_data_update_timestamp = None
+        self.search_result = []
+
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.lineEdit = QLineEdit()
 
-        doSearchButton = QPushButton("搜索")
-        doSearchButton.clicked.connect(self.parent.do_search)
+        do_search_button = QPushButton("搜索")
+        do_search_button.clicked.connect(self.parent.do_search)
 
         layout = QVBoxLayout()
         layout.addWidget(self.lineEdit)
-        layout.addWidget(doSearchButton)
+        layout.addWidget(do_search_button)
         self.setLayout(layout)
         self.setWindowTitle("搜索")
 
@@ -277,6 +286,8 @@ class App(QWidget):
         self.initUI()
         self.tray_icon = TrayIcon(self)
         self.tray_icon.show()
+        # 记录数据更新时间
+        self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
 
         # 防止窗口超出屏幕
         pos = self.pos()
@@ -550,6 +561,37 @@ class App(QWidget):
     def do_search(self):
         """搜索框按钮事件"""
         logger.info('do_search()')
+        # 搜索关键字
+        keyword = self.search_window.lineEdit.text()
+        logger.info(keyword)
+        if not keyword:
+            return
+
+        if self.search_window.last_data_update_timestamp != self.data_update_timestamp:
+            logger.info('数据有变动, 重新搜索')
+            self.last_search_index = 0
+            self.search_window.search_result = []
+            # 目标
+            selected_columns = list(range(len(headers)))
+            for r in range(len(data_list)):
+                for c in selected_columns:
+                    cell_data = data_list[r][c]
+                    if keyword in cell_data:
+                        logger.info(f'找到了! {r, c, cell_data}')
+                        self.search_window.search_result.append({'r': r, 'c': c, 'cell_data': cell_data})
+
+            # 如果有匹配的结果, 进行跳转
+            if self.search_window.search_result:
+                self.search_window.last_data_update_timestamp = self.data_update_timestamp
+                logger.info(f"跳转 {self.search_window.search_result[0]['r'], self.search_window.search_result[0]['c']}")
+                self.tableWidget.setCurrentCell(self.search_window.search_result[0]['r'],
+                                                self.search_window.search_result[0]['c'])
+
+        else:
+            logger.info('继续遍历上次搜索的结果')
+            self.last_search_index = (self.last_search_index + 1) % len(self.search_window.search_result)
+            self.tableWidget.setCurrentCell(self.search_window.search_result[self.last_search_index]['r'],
+                                            self.search_window.search_result[self.last_search_index]['c'])
 
     @pyqtSlot()
     def on_double_click(self):
@@ -643,6 +685,9 @@ class App(QWidget):
         logger.info(f'on_cell_changed 结果 {data_list}')
         if config['auto_save']:
             save_config()
+
+        # 记录数据修改的时间作为简易版本号, 用来标记搜索结果是否要更新
+        self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
 
     @pyqtSlot()
     def on_export_click(self):
