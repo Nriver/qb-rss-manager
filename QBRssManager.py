@@ -537,7 +537,9 @@ class App(QWidget):
         self.tableWidget.blockSignals(True)
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
-        if r == 0:
+        logger.info(f'{r} {c}')
+        # 未选中任何单元格时 坐标是 (-1, -1)
+        if r == 0 or r == -1:
             return
 
         data_list[r], data_list[r - 1] = data_list[r - 1], data_list[r]
@@ -563,7 +565,8 @@ class App(QWidget):
         self.tableWidget.blockSignals(True)
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
-        if r == len(data_list):
+        logger.info(f'{r} {c}')
+        if r == len(data_list) or r == -1:
             return
 
         data_list[r], data_list[r + 1] = data_list[r + 1], data_list[r]
