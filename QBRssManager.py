@@ -583,15 +583,15 @@ class App(QWidget):
             # 如果有匹配的结果, 进行跳转
             if self.search_window.search_result:
                 self.search_window.last_data_update_timestamp = self.data_update_timestamp
-                logger.info(f"跳转 {self.search_window.search_result[0]['r'], self.search_window.search_result[0]['c']}")
-                self.tableWidget.setCurrentCell(self.search_window.search_result[0]['r'],
-                                                self.search_window.search_result[0]['c'])
-
         else:
             logger.info('继续遍历上次搜索的结果')
             self.last_search_index = (self.last_search_index + 1) % len(self.search_window.search_result)
-            self.tableWidget.setCurrentCell(self.search_window.search_result[self.last_search_index]['r'],
-                                            self.search_window.search_result[self.last_search_index]['c'])
+
+        logger.info(
+            f"跳转 {self.search_window.search_result[self.last_search_index]['r'], self.search_window.search_result[self.last_search_index]['c']}")
+        self.tableWidget.setCurrentCell(self.search_window.search_result[self.last_search_index]['r'],
+                                        self.search_window.search_result[self.last_search_index]['c'])
+        self.activateWindow()
 
     @pyqtSlot()
     def on_double_click(self):
@@ -874,7 +874,7 @@ class App(QWidget):
             logger.info(f'self.search_window {pos.x(), pos.y()}')
             self.search_window.show()
             # 获取焦点
-            self.search_window.setFocus()
+            self.search_window.activateWindow()
 
         # 删除数据
         elif event.key() == Qt.Key_Delete:
