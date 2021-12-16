@@ -10,6 +10,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter
+from loguru import logger
 from win32con import WM_MOUSEMOVE
 
 # 表头
@@ -29,7 +30,7 @@ def clean_data_list():
 
 
 def save_config(update_data=True):
-    print('保存配置', '更新数据', update_data)
+    logger.info(f'保存配置 更新数据 {update_data}')
     with open('config.json', 'w', encoding='utf-8') as f:
         if update_data:
             config['data_list'] = clean_data_list()
@@ -164,7 +165,7 @@ class CustomEditor(QtWidgets.QLineEdit):
     def custom_input_method_event(self, event):
         # 自定义 输入法 事件处理
         # PyQt5.QtGui.QInputMethodEvent
-        print('cusstom IME', event)
+        logger.info(f'customized IME {event}')
         # 原始事件
         super(CustomEditor, self).inputMethodEvent(event)
         # 原始事件处理完才能得到最新的文本
@@ -172,7 +173,7 @@ class CustomEditor(QtWidgets.QLineEdit):
 
     def custom_keypress(self, event):
         # 自定义 按键 事件处理
-        print('custom keypress')
+        logger.info('custom keypress')
         # 原始事件
         super(CustomEditor, self).keyPressEvent(event)
         # 原始事件处理完才能得到最新的文本
@@ -180,8 +181,8 @@ class CustomEditor(QtWidgets.QLineEdit):
 
     def process_text(self, text):
         # 统一处理输入事件的文字
-        print('process_text()', text)
-        print('self.index', self.index.row(), self.index.column())
+        logger.info('process_text()', text)
+        logger.info(f'self.index {self.index.row()} {self.index.column()}')
         data_list[self.index.row()][self.index.column()] = text
         include_text = data_list[self.index.row()][2]
         exclude_text = data_list[self.index.row()][3]
@@ -197,7 +198,7 @@ class CustomDelegate(QtWidgets.QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         # 编辑器初始化
-        print('createEditor()')
+        logger.info('createEditor()')
         editor = CustomEditor(parent, index, self.parent_app)
         return editor
 
@@ -300,7 +301,7 @@ class App(QWidget):
             self.splitter.restoreState(QByteArray.fromHex(bytes(config['splitter_state'], 'ascii')))
 
         except Exception as e:
-            print('未发现splitter状态, 使用默认分隔比例')
+            logger.info('未发现splitter状态, 使用默认分隔比例')
             self.splitter.setStretchFactor(0, 8)
             self.splitter.setStretchFactor(1, 1)
 
@@ -315,8 +316,8 @@ class App(QWidget):
 
     def custom_text_browser_resize_event(self, event):
         # 文本框大小变化时, 记录splitter的状态
-        print("custom_resize_event", self.height, self.tableWidget.height(), self.text_browser.height())
-        print("splitter_state", self.splitter.saveState())
+        logger.info(f"custom_resize_event {self.height} {self.tableWidget.height()} {self.text_browser.height()}")
+        logger.info(f"splitter_state {self.splitter.saveState()}")
         config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
         save_config(update_data=False)
 
@@ -408,7 +409,7 @@ class App(QWidget):
         self.tableWidget.verticalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.tableWidget.horizontalScrollBar().setContextMenuPolicy(QtCore.Qt.NoContextMenu)
 
-        print('delegate 初始化')
+        logger.info('delegate 初始化')
         # 自定义处理
         self.tableWidget.setItemDelegateForColumn(2, CustomDelegate(self))
         self.tableWidget.setItemDelegateForColumn(3, CustomDelegate(self))
@@ -416,7 +417,7 @@ class App(QWidget):
     def generateTextBrowserMenu(self, pos):
         """文本框自定义右键菜单"""
         time.sleep(0)
-        print("pos======", pos)
+        logger.info(f"pos: {pos}")
         a = QPoint(pos.x(), pos.y())
 
         self.text_browser_menu = QMenu(self)
@@ -434,12 +435,12 @@ class App(QWidget):
 
     def on_copy_text_click(self):
         """文本框右键菜单 复制 按钮事件"""
-        print('on_copy_text_click()')
+        logger.info('on_copy_text_click()')
         self.text_browser.copy()
 
     def on_select_all_click(self):
         """文本框右键菜单 全选 按钮事件"""
-        print('on_select_all_click()')
+        logger.info('on_select_all_click()')
         self.text_browser.selectAll()
 
     def generateMenu(self, pos):
@@ -447,7 +448,7 @@ class App(QWidget):
         # 右键弹窗菜单加一个sleep, 防止长按右键导致右键事件被重复触发
         time.sleep(0)
         # 感觉弹出菜单和实际鼠标点击位置有偏差, 尝试手动修正
-        print("pos======", pos)
+        logger.info("pos {pos}")
         a = QPoint(pos.x() + 26, pos.y() + 22)
 
         self.menu = QMenu(self)
@@ -471,12 +472,12 @@ class App(QWidget):
     def on_header_resized(self):
         if self.preventHeaderResizeEvent:
             return
-        print('on_header_resized()')
+        logger.info('on_header_resized()')
         # 修改列宽写入配置
         column_width_list_tmp = []
         for i in range(len(headers)):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
-        print(column_width_list_tmp)
+        logger.info(column_width_list_tmp)
         config['column_width_list'] = column_width_list_tmp
         save_config(update_data=False)
 
@@ -485,16 +486,16 @@ class App(QWidget):
             self.tableWidget.type_hints = []
             # 当前行feed路径数据
             current_row_feed = data_list[row][6]
-            print('current_row_feed', current_row_feed)
+            logger.info(f'current_row_feed {current_row_feed}')
             # 读取qb feed json数据
             feed_uid = None
             with open(config['feeds_json_path'], 'r', encoding='utf-8') as f:
                 feeds_json = json.loads(f.read())
-                print('feeds_json', feeds_json)
+                logger.info(f'feeds_json {feeds_json}')
                 for x in feeds_json:
                     if current_row_feed == feeds_json[x]['url']:
                         feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
-                        print('feed_uid', feed_uid)
+                        logger.info(f'feed_uid {feed_uid}')
                         break
             if feed_uid:
                 # 读取rss feed的标题 写入 type_hints 列表
@@ -505,18 +506,19 @@ class App(QWidget):
                     for x in article:
                         article_titles.append(x['title'])
                 self.tableWidget.type_hints = article_titles
-                print(self.tableWidget.type_hints)
+                logger.info(self.tableWidget.type_hints)
                 return True
         except Exception as e:
-            print('exception', e)
+            logger.info(f'exception {e}')
         self.text_browser.setText('没找到RSS数据呀')
 
     @pyqtSlot()
     def on_double_click(self):
         # 双击事件
-        print("on_double_click()")
+        logger.info("on_double_click()")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
-            print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
+            logger.info(
+                f'{currentQTableWidgetItem.row()} {currentQTableWidgetItem.column()} {currentQTableWidgetItem.text()}')
 
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
@@ -529,7 +531,7 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_move_up_click(self):
-        print('on_move_up_click()')
+        logger.info('on_move_up_click()')
         # 上移事件
         # 防止触发 cellChange 事件导致重复更新
         self.tableWidget.blockSignals(True)
@@ -582,12 +584,12 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_cell_changed(self):
-        print('on_cell_changed()')
+        logger.info('on_cell_changed()')
         # 修改事件
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
         text = self.tableWidget.currentItem().text()
-        print(r, c, text)
+        logger.info(f'{r} {c} {text}')
 
         # 第一列时间进行特殊转换处理
         if c == 0:
@@ -596,16 +598,16 @@ class App(QWidget):
 
         # 修改数据
         data_list[r][c] = text
-        print('on_cell_changed 结果', data_list)
+        logger.info(f'on_cell_changed 结果 {data_list}')
         if config['auto_save']:
             save_config()
 
     @pyqtSlot()
     def on_export_click(self):
-        print('生成qb订阅规则')
+        logger.info('生成qb订阅规则')
         output_data = {}
         for x in clean_data_list():
-            print(x)
+            logger.info(x)
             item = {
                 "enabled": True,
                 "mustContain": x[2],
@@ -616,10 +618,10 @@ class App(QWidget):
             }
 
             output_data[x[0] + ' ' + x[1]] = item
-        print(config['rules_path'])
+        logger.info(config['rules_path'])
         with open(config['rules_path'], 'w', encoding='utf-8') as f:
             f.write(json.dumps(output_data, ensure_ascii=False))
-        print(config['open_qb_after_export'])
+        logger.info(config['open_qb_after_export'])
         if config['open_qb_after_export']:
             # 关闭qb
             try:
@@ -693,10 +695,11 @@ class App(QWidget):
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
-            print('edit cell')
+            logger.info('edit cell')
             # PyQt5.QtCore.QModelIndex
             currentQTableWidgetItem = self.tableWidget.currentItem()
-            print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
+            logger.info(
+                f'{currentQTableWidgetItem.row()} {currentQTableWidgetItem.column()} {currentQTableWidgetItem.text()}')
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
                 self.text_browser.clear()
@@ -710,19 +713,19 @@ class App(QWidget):
 
         #   复制粘贴
         elif event.key() == Qt.Key_C and (event.modifiers() & Qt.ControlModifier):
-            print('ctrl c')
+            logger.info('ctrl c')
             self.copied_cells = sorted(self.tableWidget.selectedIndexes())
-            print(f'复制了 {len(self.copied_cells)} 个')
+            logger.info(f'复制了 {len(self.copied_cells)} 个')
             # 清空剪贴板
             app.clipboard().setText('')
         elif event.key() == Qt.Key_V and (event.modifiers() & Qt.ControlModifier):
-            print('ctrl v')
+            logger.info('ctrl v')
             self.tableWidget.blockSignals(True)
 
             # 如果剪贴板有内容 优先粘贴剪贴板
             # 可以兼容excel表格的复制粘贴
             if app.clipboard().text():
-                print('导入excel')
+                logger.info('导入excel')
                 r = self.tableWidget.currentRow()
                 c = self.tableWidget.currentColumn()
                 rows = app.clipboard().text().split('\n')
@@ -730,7 +733,7 @@ class App(QWidget):
                     if not row:
                         continue
                     cells = row.split('\t')
-                    print(cells)
+                    logger.info(cells)
 
                     for b_c, cell_data in enumerate(cells):
                         new_r = b_r + r
@@ -738,14 +741,14 @@ class App(QWidget):
                         if new_c > (len(headers) - 1):
                             # 忽略跨行数据 防止数组越界
                             continue
-                        print('粘贴数据', new_r, new_c, cell_data)
+                        logger.info(f'粘贴数据 {new_r} {new_c} {cell_data}')
                         item = QTableWidgetItem(cell_data)
                         if new_c in config['center_columns']:
                             item.setTextAlignment(Qt.AlignCenter)
 
                         self.tableWidget.setItem(new_r, new_c, item)
                         data_list[new_r][new_c] = cell_data
-                        print('粘贴结果', data_list)
+                        logger.info(f'粘贴结果 {data_list}')
                     # 保存结果
                     if config['auto_save']:
                         save_config()
@@ -758,20 +761,20 @@ class App(QWidget):
                 return
             r = self.tableWidget.currentRow() - self.copied_cells[0].row()
             c = self.tableWidget.currentColumn() - self.copied_cells[0].column()
-            print(f'准备粘贴 {len(self.copied_cells)} 个')
+            logger.info(f'准备粘贴 {len(self.copied_cells)} 个')
             for cell in self.copied_cells:
                 new_r = cell.row() + r
                 new_c = cell.column() + c
                 if new_c > (len(headers) - 1):
                     # 忽略跨行数据 防止数组越界
                     continue
-                print('粘贴数据', new_r, new_c, cell.data())
+                logger.info('粘贴数据', new_r, new_c, cell.data())
                 item = QTableWidgetItem(cell.data())
                 if new_c in config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(new_r, new_c, item)
                 data_list[new_r][new_c] = cell.data()
-                print('粘贴结果', data_list)
+                logger.info('粘贴结果', data_list)
             # 保存结果
             if config['auto_save']:
                 save_config()
@@ -779,7 +782,7 @@ class App(QWidget):
 
         # 删除数据
         elif event.key() == Qt.Key_Delete:
-            print('delete')
+            logger.info('delete')
             self.tableWidget.blockSignals(True)
             for x in self.tableWidget.selectedIndexes():
                 r = x.row()
@@ -792,25 +795,25 @@ class App(QWidget):
 
         # 方向键
         elif event.key() == Qt.Key_Right:
-            print('Move right')
+            logger.info('Move right')
             self.tableWidget.setCurrentCell(self.tableWidget.currentRow(),
                                             min(self.tableWidget.currentColumn() + 1, len(headers) - 1))
         elif event.key() == Qt.Key_Left:
-            print('Move left')
+            logger.info('Move left')
             self.tableWidget.setCurrentCell(self.tableWidget.currentRow(),
                                             max(self.tableWidget.currentColumn() - 1, 0))
         elif event.key() == Qt.Key_Up:
-            print('Move up')
+            logger.info('Move up')
             self.tableWidget.setCurrentCell(max(self.tableWidget.currentRow() - 1, 0),
                                             self.tableWidget.currentColumn())
         elif event.key() == Qt.Key_Down:
-            print('Move down')
+            logger.info('Move down')
             self.tableWidget.setCurrentCell(max(self.tableWidget.currentRow() + 1, 0),
                                             self.tableWidget.currentColumn())
 
         elif event.key() == Qt.Key_I and (event.modifiers() & Qt.ControlModifier):
             # 导入excel数据
-            print('ctrl i')
+            logger.info('ctrl i')
             self.tableWidget.blockSignals(True)
             r = self.tableWidget.currentRow()
             c = self.tableWidget.currentColumn()
@@ -819,7 +822,7 @@ class App(QWidget):
                 if not row:
                     continue
                 cells = row.split('\t')
-                print(cells)
+                logger.info(cells)
 
                 for b_c, cell_data in enumerate(cells):
                     new_r = b_r + r
@@ -827,10 +830,10 @@ class App(QWidget):
                     if new_c > (len(headers) - 1):
                         # 忽略跨行数据 防止数组越界
                         continue
-                    print('粘贴数据', new_r, new_c, cell_data)
+                    logger.info(f'粘贴数据 {new_r} {new_c} {cell_data}')
                     self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell_data))
                     data_list[new_r][new_c] = cell_data
-                    print('粘贴结果', data_list)
+                    logger.info('粘贴结果', data_list)
                 # 保存结果
                 if config['auto_save']:
                     save_config()
@@ -841,7 +844,7 @@ class App(QWidget):
     def menu_delete_action(self):
         # 右键菜单 删除
         r = self.tableWidget.currentRow()
-        print(r)
+        logger.info(r)
         self.tableWidget.blockSignals(True)
 
         # 修改为只删除当前行, 不清理列表
@@ -857,7 +860,7 @@ class App(QWidget):
         self.tableWidget.blockSignals(False)
 
     def resizeEvent(self, event):
-        print("Window has been resized")
+        logger.info("Window has been resized")
         config['full_window_width'] = self.frameGeometry().width()
         config['full_window_height'] = self.frameGeometry().height()
         save_config(update_data=False)
@@ -865,7 +868,7 @@ class App(QWidget):
     def closeEvent(self, event):
         # 主窗口的关闭按钮事件
         if config['close_to_tray']:
-            print('关闭按钮最小化到任务栏托盘')
+            logger.info('关闭按钮最小化到任务栏托盘')
             self.hide()
             self.tray_icon.show()
             event.ignore()
@@ -902,7 +905,7 @@ class TrayIcon(QSystemTrayIcon):
                 pw.hide()
             else:
                 pw.show()
-        print(reason)
+        logger.info(reason)
 
     def show_main_window(self):
         self.parent().setWindowState(QtCore.Qt.WindowActive)
@@ -915,7 +918,7 @@ class TrayIcon(QSystemTrayIcon):
 
 
 def refresh_tray():
-    print('刷新任务栏托盘图标')
+    logger.info('刷新任务栏托盘图标')
     # 刷新任务栏托盘图标, 去掉强制关闭进程后的残留图标
     hShellTrayWnd = win32gui.FindWindow("Shell_trayWnd", "")
     hTrayNotifyWnd = win32gui.FindWindowEx(hShellTrayWnd, 0, "TrayNotifyWnd", None)
@@ -924,10 +927,10 @@ def refresh_tray():
         hToolbarWindow32 = win32gui.FindWindowEx(hSysPager, 0, 'ToolbarWindow32', None)
     else:
         hToolbarWindow32 = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'ToolbarWindow32', None);
-    print('hToolbarWindow32', hToolbarWindow32)
+    logger.info(f'hToolbarWindow32 {hToolbarWindow32}')
     if hToolbarWindow32:
         rect = win32gui.GetWindowRect(hToolbarWindow32)
-        print(rect)
+        logger.info(rect)
         # 窗口宽度 // 图标宽度 = 图标个数?
         for x in range((rect[2] - rect[0]) // 24):
             win32gui.SendMessage(hToolbarWindow32, WM_MOUSEMOVE, 0, 1)
