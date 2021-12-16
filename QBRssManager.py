@@ -267,6 +267,19 @@ class SearchWindow(QWidget):
         flags |= Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
 
+        # 按键绑定
+        self.keyPressEvent = self.handle_key_press
+
+    def closeEvent(self, event):
+        # 搜索窗口的关闭按钮事件
+        logger.info('关闭搜索窗口')
+        self.parent.text_browser.clear()
+
+    def handle_key_press(self, event):
+        if event.key() in (Qt.Key_Enter, Qt.Key_Return):
+            logger.info('搜索')
+            self.parent.do_search()
+
 
 class App(QWidget):
 
@@ -569,6 +582,7 @@ class App(QWidget):
 
         if self.search_window.last_search_keyword != keyword or self.search_window.last_data_update_timestamp != self.data_update_timestamp:
             logger.info('数据有变动, 重新搜索')
+            self.text_browser.clear()
             self.last_search_index = 0
             self.search_window.search_result = []
             # 目标
@@ -576,7 +590,8 @@ class App(QWidget):
             for r in range(len(data_list)):
                 for c in selected_columns:
                     cell_data = data_list[r][c]
-                    if keyword in cell_data:
+                    # 忽略大小写
+                    if keyword.lower() in cell_data.lower():
                         logger.info(f'找到了! {r, c, cell_data}')
                         self.search_window.search_result.append({'r': r, 'c': c, 'cell_data': cell_data})
 
@@ -593,7 +608,10 @@ class App(QWidget):
                 f"跳转 {self.search_window.search_result[self.last_search_index]['r'], self.search_window.search_result[self.last_search_index]['c']}")
             self.tableWidget.setCurrentCell(self.search_window.search_result[self.last_search_index]['r'],
                                             self.search_window.search_result[self.last_search_index]['c'])
+            self.text_browser.setText(f'搜索结果: {self.last_search_index + 1}/{len(self.search_window.search_result)}')
             self.activateWindow()
+        else:
+            self.text_browser.setText('没有找到匹配的数据')
 
     @pyqtSlot()
     def on_double_click(self):
@@ -936,8 +954,10 @@ class App(QWidget):
                 if config['auto_save']:
                     save_config()
             self.tableWidget.blockSignals(False)
+        elif event.key() in (Qt.Key_F3,):
+            self.do_search()
 
-        # return
+    # return
 
     def menu_delete_action(self):
         # 右键菜单 删除
