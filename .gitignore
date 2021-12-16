@@ -1,7 +1,7 @@
 # nate's custom
-config.json
 QBRssManager.exe
 .idea/
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
