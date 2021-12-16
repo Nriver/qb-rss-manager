@@ -181,8 +181,8 @@ class CustomEditor(QtWidgets.QLineEdit):
 
     def process_text(self, text):
         # 统一处理输入事件的文字
-        logger.info('process_text()', text)
-        logger.info(f'self.index {self.index.row()} {self.index.column()}')
+        logger.info(f'process_text() {text}')
+        logger.info(f'self.index {self.index.row(), self.index.column()}')
         data_list[self.index.row()][self.index.column()] = text
         include_text = data_list[self.index.row()][2]
         exclude_text = data_list[self.index.row()][3]
@@ -236,6 +236,11 @@ class CustomQTextBrowser(QTextBrowser):
                 self.parent_app.text_browser.append('暂时没有找到相关的feed')
 
 
+class SearchWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+
+
 class App(QWidget):
 
     def __init__(self):
@@ -254,6 +259,11 @@ class App(QWidget):
         self.initUI()
         self.tray_icon = TrayIcon(self)
         self.tray_icon.show()
+
+        self.search_window = SearchWindow()
+
+        pos = self.search_window.pos()
+        logger.info(f'self.search_window {pos.x(), pos.y()}')
 
     def center(self):
         # 窗口居中
@@ -316,7 +326,7 @@ class App(QWidget):
 
     def custom_text_browser_resize_event(self, event):
         # 文本框大小变化时, 记录splitter的状态
-        logger.info(f"custom_resize_event {self.height} {self.tableWidget.height()} {self.text_browser.height()}")
+        logger.info(f"custom_resize_event {self.height, self.tableWidget.height(), self.text_browser.height()}")
         logger.info(f"splitter_state {self.splitter.saveState()}")
         config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
         save_config(update_data=False)
@@ -417,7 +427,7 @@ class App(QWidget):
     def generateTextBrowserMenu(self, pos):
         """文本框自定义右键菜单"""
         time.sleep(0)
-        logger.info(f"pos: {pos}")
+        logger.info(f"pos: {pos.x(), pos.y()}")
         a = QPoint(pos.x(), pos.y())
 
         self.text_browser_menu = QMenu(self)
@@ -448,7 +458,7 @@ class App(QWidget):
         # 右键弹窗菜单加一个sleep, 防止长按右键导致右键事件被重复触发
         time.sleep(0)
         # 感觉弹出菜单和实际鼠标点击位置有偏差, 尝试手动修正
-        logger.info("pos {pos}")
+        logger.info(f"pos {pos.x(), pos.y()}")
         a = QPoint(pos.x() + 26, pos.y() + 22)
 
         self.menu = QMenu(self)
@@ -518,7 +528,7 @@ class App(QWidget):
         logger.info("on_double_click()")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
             logger.info(
-                f'{currentQTableWidgetItem.row()} {currentQTableWidgetItem.column()} {currentQTableWidgetItem.text()}')
+                f'{currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text()}')
 
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
@@ -537,7 +547,7 @@ class App(QWidget):
         self.tableWidget.blockSignals(True)
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
-        logger.info(f'{r} {c}')
+        logger.info(f'{r, c}')
         # 未选中任何单元格时 坐标是 (-1, -1)
         if r == 0 or r == -1:
             return
@@ -565,7 +575,7 @@ class App(QWidget):
         self.tableWidget.blockSignals(True)
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
-        logger.info(f'{r} {c}')
+        logger.info(f'{r, c}')
         if r == len(data_list) or r == -1:
             return
 
@@ -592,7 +602,7 @@ class App(QWidget):
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
         text = self.tableWidget.currentItem().text()
-        logger.info(f'{r} {c} {text}')
+        logger.info(f'{r, c, text}')
 
         # 第一列时间进行特殊转换处理
         if c == 0:
@@ -702,7 +712,7 @@ class App(QWidget):
             # PyQt5.QtCore.QModelIndex
             currentQTableWidgetItem = self.tableWidget.currentItem()
             logger.info(
-                f'{currentQTableWidgetItem.row()} {currentQTableWidgetItem.column()} {currentQTableWidgetItem.text()}')
+                f'{currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text()}')
             # 读取feed数据 用于过滤输入
             if (currentQTableWidgetItem.column() in (2, 3)):
                 self.text_browser.clear()
@@ -744,7 +754,7 @@ class App(QWidget):
                         if new_c > (len(headers) - 1):
                             # 忽略跨行数据 防止数组越界
                             continue
-                        logger.info(f'粘贴数据 {new_r} {new_c} {cell_data}')
+                        logger.info(f'粘贴数据 {new_r, new_c, cell_data}')
                         item = QTableWidgetItem(cell_data)
                         if new_c in config['center_columns']:
                             item.setTextAlignment(Qt.AlignCenter)
@@ -771,13 +781,13 @@ class App(QWidget):
                 if new_c > (len(headers) - 1):
                     # 忽略跨行数据 防止数组越界
                     continue
-                logger.info('粘贴数据', new_r, new_c, cell.data())
+                logger.info(f'粘贴数据 {new_r, new_c, cell.data()}')
                 item = QTableWidgetItem(cell.data())
                 if new_c in config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(new_r, new_c, item)
                 data_list[new_r][new_c] = cell.data()
-                logger.info('粘贴结果', data_list)
+                logger.info(f'粘贴结果 {data_list}')
             # 保存结果
             if config['auto_save']:
                 save_config()
@@ -833,10 +843,10 @@ class App(QWidget):
                     if new_c > (len(headers) - 1):
                         # 忽略跨行数据 防止数组越界
                         continue
-                    logger.info(f'粘贴数据 {new_r} {new_c} {cell_data}')
+                    logger.info(f'粘贴数据 {new_r, new_c, cell_data}')
                     self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell_data))
                     data_list[new_r][new_c] = cell_data
-                    logger.info('粘贴结果', data_list)
+                    logger.info(f'粘贴结果 {data_list}')
                 # 保存结果
                 if config['auto_save']:
                     save_config()
