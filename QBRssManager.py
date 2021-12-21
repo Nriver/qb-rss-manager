@@ -339,6 +339,7 @@ class App(QWidget):
         self.top = 0
         self.width = config['full_window_width']
         self.height = config['full_window_height']
+        logger.info(f'窗口大小 {self.width} {self.height}')
         # 防止初始化时触发header宽度变化事件导致参数被覆盖, 等初始化完毕再设置为False
         self.preventHeaderResizeEvent = True
         # ctrl+c
@@ -363,7 +364,7 @@ class App(QWidget):
 
     def center(self):
         # 窗口居中
-        qr = self.frameGeometry()
+        qr = self.normalGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
@@ -857,8 +858,8 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_save_click(self):
-        config['full_window_width'] = self.frameGeometry().width()
-        config['full_window_height'] = self.frameGeometry().height()
+        config['full_window_width'] = self.normalGeometry().width()
+        config['full_window_height'] = self.normalGeometry().height()
         column_width_list_tmp = []
         for i in range(len(headers)):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
@@ -1088,8 +1089,8 @@ class App(QWidget):
 
     def resizeEvent(self, event):
         logger.info("Window has been resized")
-        config['full_window_width'] = self.frameGeometry().width()
-        config['full_window_height'] = self.frameGeometry().height()
+        config['full_window_width'] = self.normalGeometry().width()
+        config['full_window_height'] = self.normalGeometry().height()
         save_config(update_data=False)
 
     def closeEvent(self, event):
