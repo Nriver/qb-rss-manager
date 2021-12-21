@@ -381,6 +381,7 @@ class App(QWidget):
         self.layout_button.addWidget(self.clean_row_button)
         self.layout_button.addWidget(self.load_config_button)
         self.layout_button.addWidget(self.save_button)
+        self.layout_button.addWidget(self.backup_button)
         self.layout_button.addWidget(self.output_button)
 
         # 文本框 固定位置方便输出
@@ -446,6 +447,9 @@ class App(QWidget):
 
         self.clean_row_button = QPushButton('清理空行', self)
         self.clean_row_button.clicked.connect(self.on_clean_row_click)
+
+        self.backup_button = QPushButton('备份配置', self)
+        self.backup_button.clicked.connect(self.on_backup_click)
 
     def createTable(self):
         self.tableWidget = QTableWidget()
@@ -894,6 +898,10 @@ class App(QWidget):
                 self.tableWidget.setItem(cx, cy, item)
 
         self.tableWidget.blockSignals(False)
+
+    @pyqtSlot()
+    def on_backup_click(self):
+        logger.info('备份')
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
