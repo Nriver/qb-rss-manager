@@ -5,6 +5,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
+from zipfile import ZipFile
 
 import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -310,6 +311,8 @@ class SearchWindow(QWidget):
 
         # 按键绑定
         self.keyPressEvent = self.handle_key_press
+
+        self.resize(250, 100)
 
     def closeEvent(self, event):
         # 搜索窗口的关闭按钮事件
@@ -712,6 +715,19 @@ class App(QWidget):
 
         self.tableWidget.blockSignals(False)
 
+    def show_message(self, message, title):
+        """弹出框消息"""
+        self.msg = QMessageBox()
+        # 设置图标
+        self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+        # 只能通过设置样式来修改宽度, 其它设置没用
+        self.msg.setStyleSheet("QLabel {min-width: 70px;}")
+        # 提示信息
+        self.msg.setText(message)
+        # 标题
+        self.msg.setWindowTitle(title)
+        self.msg.show()
+
     @pyqtSlot()
     def on_double_click(self):
         # 双击事件
@@ -869,16 +885,7 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         config['column_width_list'] = column_width_list_tmp
         save_config()
-        self.msg = QMessageBox()
-        # 设置图标
-        self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
-        # 只能通过设置样式来修改宽度, 其它设置没用
-        self.msg.setStyleSheet("QLabel {min-width: 70px;}")
-        # 提示信息
-        self.msg.setText("保存成功")
-        # 标题
-        self.msg.setWindowTitle("不错不错")
-        self.msg.show()
+        self.show_message("保存成功", "不错不错")
 
     @pyqtSlot()
     def on_clean_row_click(self):
@@ -901,7 +908,16 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_backup_click(self):
+        """备份配置"""
+        # 先保存再备份
+        save_config()
         logger.info('备份')
+        backup_file_name = f'config_{datetime.now()}.json'
+        logger.info(backup_file_name)
+        zip_obj = ZipFile('backup.zip', 'a')
+        zip_obj.write('config.json', backup_file_name)
+        logger.info('备份完成')
+        self.show_message('备份完成', '不怕手抖')
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
