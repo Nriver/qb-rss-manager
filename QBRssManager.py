@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter, \
-    QLineEdit
+    QTabWidget, QLineEdit
 from loguru import logger
 from win32con import WM_MOUSEMOVE
 
@@ -250,17 +250,55 @@ class SearchWindow(QWidget):
         self.last_data_update_timestamp = None
         self.search_result = []
 
-        self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
-        self.lineEdit = QLineEdit()
+        self.current_tab = 0
+        self.last_tab = 0
 
+        self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+
+        self.tabs = QTabWidget()
+        # self.tabs.resize(300, 200)
+
+        # 搜索tab
+        self.lineEdit = QLineEdit()
+        self.lineEdit.setPlaceholderText('输入搜索关键字...')
         do_search_button = QPushButton("搜索")
         do_search_button.clicked.connect(self.parent.do_search)
+        tab = QWidget()
+        tab.layout = QVBoxLayout(self)
+        tab.layout.addWidget(self.lineEdit)
+        tab.layout.addWidget(do_search_button)
+        tab.setLayout(tab.layout)
+        self.tabs.addTab(tab, "搜索")
+
+        # 替换tab
+        self.lineEditReplaceSource = QLineEdit()
+        self.lineEditReplaceSource.setPlaceholderText('输入搜索关键字...')
+        self.lineEditReplaceTarget = QLineEdit()
+        self.lineEditReplaceTarget.setPlaceholderText('替换为...')
+        do_search_button2 = QPushButton("搜索")
+        do_search_button2.clicked.connect(self.parent.do_search)
+        do_replace_button = QPushButton("替换")
+        do_replace_button.clicked.connect(self.parent.do_replace)
+        tab = QWidget()
+        tab.layout = QVBoxLayout(self)
+        tab.layout.addWidget(self.lineEditReplaceSource)
+        tab.layout.addWidget(self.lineEditReplaceTarget)
+        tab.layout.addWidget(do_search_button2)
+        tab.layout.addWidget(do_replace_button)
+        tab.setLayout(tab.layout)
+        self.tabs.addTab(tab, "替换")
+
+        # 绑定tab切换事件
+        self.tabs.currentChanged.connect(self.parent.search_tab_change)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.lineEdit)
-        layout.addWidget(do_search_button)
+        layout.addWidget(self.tabs)
         self.setLayout(layout)
-        self.setWindowTitle("搜索")
+
+        # 这个是搜索输入框 切换tab时跟据index把之前的数据带过来覆盖
+        self.text_edit_list = [self.lineEdit, self.lineEditReplaceSource]
+
+        self.setWindowTitle("搜索和替换")
 
         flags = Qt.WindowFlags()
         # 窗口永远在最前面
@@ -281,6 +319,10 @@ class SearchWindow(QWidget):
             self.parent.do_search()
         elif event.key() in (Qt.Key_Escape,):
             self.close()
+        elif event.key() == Qt.Key_F and (event.modifiers() & Qt.ControlModifier):
+            self.tabs.setCurrentIndex(0)
+        elif event.key() == Qt.Key_H and (event.modifiers() & Qt.ControlModifier):
+            self.tabs.setCurrentIndex(1)
 
 
 class App(QWidget):
@@ -577,7 +619,8 @@ class App(QWidget):
         """搜索框按钮事件"""
         logger.info('do_search()')
         # 搜索关键字
-        keyword = self.search_window.lineEdit.text()
+        # keyword = self.search_window.lineEdit.text()
+        keyword = self.search_window.text_edit_list[self.search_window.last_tab].text()
         logger.info(keyword)
         if not keyword:
             return
@@ -596,11 +639,10 @@ class App(QWidget):
                     if keyword.lower() in cell_data.lower():
                         logger.info(f'找到了! {r, c, cell_data}')
                         self.search_window.search_result.append({'r': r, 'c': c, 'cell_data': cell_data})
-
+            self.search_window.last_search_keyword = keyword
             # 如果有匹配的结果, 进行跳转
             if self.search_window.search_result:
                 self.search_window.last_data_update_timestamp = self.data_update_timestamp
-                self.search_window.last_search_keyword = keyword
         else:
             logger.info('继续遍历上次搜索的结果')
             self.last_search_index = (self.last_search_index + 1) % len(self.search_window.search_result)
@@ -614,6 +656,25 @@ class App(QWidget):
             self.activateWindow()
         else:
             self.text_browser.setText('没有找到匹配的数据')
+
+    def search_tab_change(self, index):
+        logger.info(f'search_tab_change() {index}')
+        if self.search_window.last_tab != index:
+            self.search_window.text_edit_list[index].setText(
+                self.search_window.text_edit_list[self.search_window.last_tab].text())
+        self.search_window.last_tab = index
+
+    def do_replace(self):
+        logger.info(f'do_replace() 替换当前单元格内容')
+        source_text = self.search_window.text_edit_list[self.search_window.last_tab].text()
+        if not source_text:
+            return
+        target_text = self.search_window.lineEditReplaceTarget.text()
+        logger.info(f'{source_text} 替换为 {target_text}')
+        result = re.sub(source_text, target_text, self.tableWidget.currentItem().text(), re.IGNORECASE)
+        logger.info(result)
+        self.tableWidget.currentItem().setText(result)
+        self.do_search()
 
     @pyqtSlot()
     def on_double_click(self):
@@ -894,6 +955,17 @@ class App(QWidget):
             logger.info('ctrl f')
             pos = self.search_window.pos()
             logger.info(f'self.search_window {pos.x(), pos.y()}')
+            self.search_window.tabs.setCurrentIndex(0)
+            self.search_window.show()
+            # 获取焦点
+            self.search_window.activateWindow()
+
+        # 替换
+        elif event.key() == Qt.Key_H and (event.modifiers() & Qt.ControlModifier):
+            logger.info('ctrl h')
+            pos = self.search_window.pos()
+            logger.info(f'self.search_window {pos.x(), pos.y()}')
+            self.search_window.tabs.setCurrentIndex(1)
             self.search_window.show()
             # 获取焦点
             self.search_window.activateWindow()
