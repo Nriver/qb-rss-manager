@@ -335,7 +335,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.1.1 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.1.2 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
