@@ -279,12 +279,15 @@ class SearchWindow(QWidget):
         do_search_button2.clicked.connect(self.parent.do_search)
         do_replace_button = QPushButton("替换")
         do_replace_button.clicked.connect(self.parent.do_replace)
+        do_replace_all_button = QPushButton("全部替换")
+        do_replace_all_button.clicked.connect(self.parent.do_replace_all)
         tab = QWidget()
         tab.layout = QVBoxLayout(self)
         tab.layout.addWidget(self.lineEditReplaceSource)
         tab.layout.addWidget(self.lineEditReplaceTarget)
         tab.layout.addWidget(do_search_button2)
         tab.layout.addWidget(do_replace_button)
+        tab.layout.addWidget(do_replace_all_button)
         tab.setLayout(tab.layout)
         self.tabs.addTab(tab, "替换")
 
@@ -671,10 +674,38 @@ class App(QWidget):
             return
         target_text = self.search_window.lineEditReplaceTarget.text()
         logger.info(f'{source_text} 替换为 {target_text}')
-        result = re.sub(source_text, target_text, self.tableWidget.currentItem().text(), re.IGNORECASE)
+        pat = re.compile(re.escape(source_text), re.IGNORECASE)
+        result = pat.sub(target_text, self.tableWidget.currentItem().text())
         logger.info(result)
         self.tableWidget.currentItem().setText(result)
         self.do_search()
+
+    def do_replace_all(self):
+        logger.info(f'do_replace_all() 替换全部单元格内容')
+        source_text = self.search_window.text_edit_list[self.search_window.last_tab].text()
+        if not source_text:
+            return
+        target_text = self.search_window.lineEditReplaceTarget.text()
+        logger.info(f'{source_text} 替换为 {target_text}')
+        pat = re.compile(re.escape(source_text), re.IGNORECASE)
+
+        self.tableWidget.blockSignals(True)
+        data_list = clean_data_list()
+        # 长度补充
+        if len(data_list) < config['max_row_size']:
+            for _ in range(config['max_row_size'] - len(data_list)):
+                data_list.append(['' for x in range(len(headers))])
+        # 更新整个列表
+        for cx, row in enumerate(data_list):
+            for cy, d in enumerate(row):
+                # 替换数据
+                d = pat.sub(target_text, d)
+                item = QTableWidgetItem(d)
+                if cy in config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
+
+        self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
     def on_double_click(self):
