@@ -1,6 +1,8 @@
 # qb-rss-manager
 qBitorrent rss订阅 下载规则管理
 
+<a href="https://count.getloli.com"><img align="center" src="https://count.getloli.com/get/@Nriver_qb-rss-manager"></a><br>
+
 # 使用
 1. 从release下载最新exe程序
 2. 首次运行会生成config.json, 修改`qb_executable`和`rules_path`为你的
