@@ -1,5 +1,5 @@
 # qb-rss-manager
-qBitorrent rss订阅 下载规则管理
+qBittorrent rss订阅 下载规则管理
 
 <a href="https://count.getloli.com"><img align="center" src="https://count.getloli.com/get/@Nriver_qb-rss-manager"></a><br>
 
