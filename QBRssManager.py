@@ -1,12 +1,14 @@
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import time
 from datetime import datetime
 from zipfile import ZipFile
 
+import qbittorrentapi
 import win32gui
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
@@ -86,6 +88,12 @@ try:
             config['feeds_json_path'] = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
         if 'rss_article_folder' not in config:
             config['rss_article_folder'] = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
+        if 'use_qb_api' not in config:
+            config['use_qb_api'] = 1
+        if 'qb_api_ip' not in config:
+            config['qb_api_ip'] = '127.0.0.1'
+        if 'qb_api_port' not in config:
+            config['qb_api_port'] = 38080
         if 'text_browser_height' in config:
             del config['text_browser_height']
 except:
@@ -124,6 +132,13 @@ except:
 if len(data_list) < config['max_row_size']:
     for _ in range(config['max_row_size'] - len(data_list)):
         data_list.append(['' for x in range(len(headers))])
+
+# 初始化qb_api客户端
+if config['use_qb_api']:
+    qb_client = qbittorrentapi.Client(
+        host=config['qb_api_ip'],
+        port=config['qb_api_port'],
+    )
 
 
 def format_path(s):
@@ -240,6 +255,7 @@ class CustomQTextBrowser(QTextBrowser):
 
 
 class SearchWindow(QWidget):
+
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
@@ -335,7 +351,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.1.2 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.1.3 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -463,7 +479,7 @@ class App(QWidget):
 
         # 垂直表头修改
         # 文字居中显示
-        self.tableWidget.verticalHeader().setStyleSheet("QHeaderView { qproperty-defaultAlignment: AlignCenter; }");
+        self.tableWidget.verticalHeader().setStyleSheet("QHeaderView { qproperty-defaultAlignment: AlignCenter; }")
 
         # 渲染表头
         self.preventHeaderResizeEvent = True
@@ -827,33 +843,73 @@ class App(QWidget):
     @pyqtSlot()
     def on_export_click(self):
         logger.info('生成qb订阅规则')
-        output_data = {}
-        for x in clean_data_list():
-            logger.info(x)
-            item = {
-                "enabled": True,
-                "mustContain": x[2],
-                "mustNotContain": x[3],
-                "savePath": format_path(x[5]),
-                "affectedFeeds": [x[6], ],
-                "assignedCategory": x[7]
-            }
 
-            output_data[x[0] + ' ' + x[1]] = item
-        logger.info(config['rules_path'])
-        with open(config['rules_path'], 'w', encoding='utf-8') as f:
-            f.write(json.dumps(output_data, ensure_ascii=False))
-        logger.info(config['open_qb_after_export'])
-        if config['open_qb_after_export']:
-            # 关闭qb
+        # 检查端口可用性
+        port_open = False
+        if config['use_qb_api'] == 1:
+            a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            location = (config['qb_api_ip'], int(config['qb_api_port']))
+            result_of_check = a_socket.connect_ex(location)
+            if result_of_check == 0:
+                port_open = True
+            else:
+                port_open = False
+
+        if config['use_qb_api'] == 1 and port_open:
+            # 使用qb的api, 可以不重启qb
             try:
-                os.system(f'taskkill /f /im {qb_executable_name}')
-            except:
-                pass
-            # 启动qb
+                qb_client.auth_log_in()
+            except qbittorrentapi.LoginFailed as e:
+                logger.error(e)
+
+            # 清空已有规则
+            rss_rules = qb_client.rss_rules()
+            for x in rss_rules:
+                print(x)
+                qb_client.rss_remove_rule(x)
+            # 添加新规则
+            for x in clean_data_list():
+                qb_client.rss_set_rule(
+                    rule_name=x[0] + ' ' + x[1],
+                    rule_def={
+                        "enabled": True,
+                        "mustContain": x[2],
+                        "mustNotContain": x[3],
+                        "savePath": format_path(x[5]),
+                        "affectedFeeds": [x[6], ],
+                        "assignedCategory": x[7]
+                    }
+                )
             subprocess.Popen([config['qb_executable']])
-            # 刷新任务栏托盘图标
-            refresh_tray()
+        else:
+            # 不使用qb的api, 需要重启qb
+            output_data = {}
+            for x in clean_data_list():
+                logger.info(x)
+                item = {
+                    "enabled": True,
+                    "mustContain": x[2],
+                    "mustNotContain": x[3],
+                    "savePath": format_path(x[5]),
+                    "affectedFeeds": [x[6], ],
+                    "assignedCategory": x[7]
+                }
+
+                output_data[x[0] + ' ' + x[1]] = item
+            logger.info(config['rules_path'])
+            with open(config['rules_path'], 'w', encoding='utf-8') as f:
+                f.write(json.dumps(output_data, ensure_ascii=False))
+            logger.info(config['open_qb_after_export'])
+            if config['open_qb_after_export']:
+                # 关闭qb
+                try:
+                    os.system(f'taskkill /f /im {qb_executable_name}')
+                except:
+                    pass
+                # 启动qb
+                subprocess.Popen([config['qb_executable']])
+                # 刷新任务栏托盘图标
+                refresh_tray()
 
     @pyqtSlot()
     def on_load_config_click(self):
@@ -1129,6 +1185,7 @@ class App(QWidget):
 
 
 class TrayIcon(QSystemTrayIcon):
+
     def __init__(self, parent=None):
         super(TrayIcon, self).__init__(parent)
         self.showMenu()
@@ -1178,7 +1235,7 @@ def refresh_tray():
     if hSysPager:
         hToolbarWindow32 = win32gui.FindWindowEx(hSysPager, 0, 'ToolbarWindow32', None)
     else:
-        hToolbarWindow32 = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'ToolbarWindow32', None);
+        hToolbarWindow32 = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'ToolbarWindow32', None)
     logger.info(f'hToolbarWindow32 {hToolbarWindow32}')
     if hToolbarWindow32:
         rect = win32gui.GetWindowRect(hToolbarWindow32)
