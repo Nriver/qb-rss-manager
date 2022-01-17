@@ -40,7 +40,7 @@ qb管理程序来自 https://github.com/Nriver/qb-rss-manager
 
 重命名工具来自 https://github.com/Nriver/Episode-ReName
 
-qb主程序来自 https://github.com/qbittorrent/qBittorrent
+qb增强版主程序来自 https://github.com/c0re100/qBittorrent-Enhanced-Edition/
 
 其它数据来自各rss网站和本工具无关
 
