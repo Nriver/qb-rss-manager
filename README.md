@@ -1,6 +1,8 @@
 # qb-rss-manager
 qBittorrent rss订阅 下载规则管理
 
+[懒人包](https://github.com/Nriver/qb-rss-manager/tree/main/aio)
+
 <a href="https://count.getloli.com"><img align="center" src="https://count.getloli.com/get/@Nriver_qb-rss-manager"></a><br>
 
 # 使用
