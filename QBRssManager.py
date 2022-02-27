@@ -351,7 +351,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.1.3 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.1.4 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -1003,7 +1003,7 @@ class App(QWidget):
             # app.clipboard().setText('')
 
             # 尝试构造 excel 格式数据
-            if len(self.copied_cells) > 1:
+            if len(self.copied_cells) > 0:
                 # 找出输出区域坐标
                 min_row = self.copied_cells[0].row()
                 max_row = self.copied_cells[0].row()
