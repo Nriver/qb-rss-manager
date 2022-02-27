@@ -998,8 +998,43 @@ class App(QWidget):
             logger.info('ctrl c')
             self.copied_cells = sorted(self.tableWidget.selectedIndexes())
             logger.info(f'复制了 {len(self.copied_cells)} 个')
+
             # 清空剪贴板
-            app.clipboard().setText('')
+            # app.clipboard().setText('')
+
+            # 尝试构造 excel 格式数据
+            if len(self.copied_cells) > 1:
+                # 找出输出区域坐标
+                min_row = self.copied_cells[0].row()
+                max_row = self.copied_cells[0].row()
+                min_col = self.copied_cells[0].column()
+                max_col = self.copied_cells[0].column()
+
+                for cell in self.copied_cells:
+                    min_row = min(min_row, cell.row())
+                    max_row = max(max_row, cell.row())
+                    min_col = min(min_col, cell.column())
+                    max_col = max(max_col, cell.column())
+
+                logger.info(f'{min_row} {max_row} {min_col} {max_col}')
+
+                tmp_row_count = max_row - min_row + 1
+                tmp_col_count = max_col - min_col + 1
+
+                # 构造输出文本
+                tmp_list = [["" for x in range(tmp_col_count)] for y in range(tmp_row_count)]
+
+                for cell in self.copied_cells:
+                    tmp_list[cell.row() - min_row][cell.column() - min_col] = cell.data()
+
+                # excel 列数据以\t分隔 行数据以\n分隔
+                lines = []
+                for r in tmp_list:
+                    line = '\t'.join(r)
+                    lines.append(line)
+                excel_text = '\n'.join(lines)
+                app.clipboard().setText(excel_text)
+
         elif event.key() == Qt.Key_V and (event.modifiers() & Qt.ControlModifier):
             logger.info('ctrl v')
             self.tableWidget.blockSignals(True)
@@ -1036,31 +1071,31 @@ class App(QWidget):
                         save_config()
                 # app.clipboard().setText('')
                 self.tableWidget.blockSignals(False)
-
                 return
-
-            if not self.copied_cells:
-                return
-            r = self.tableWidget.currentRow() - self.copied_cells[0].row()
-            c = self.tableWidget.currentColumn() - self.copied_cells[0].column()
-            logger.info(f'准备粘贴 {len(self.copied_cells)} 个')
-            for cell in self.copied_cells:
-                new_r = cell.row() + r
-                new_c = cell.column() + c
-                if new_c > (len(headers) - 1):
-                    # 忽略跨行数据 防止数组越界
-                    continue
-                logger.info(f'粘贴数据 {new_r, new_c, cell.data()}')
-                item = QTableWidgetItem(cell.data())
-                if new_c in config['center_columns']:
-                    item.setTextAlignment(Qt.AlignCenter)
-                self.tableWidget.setItem(new_r, new_c, item)
-                data_list[new_r][new_c] = cell.data()
-                logger.info(f'粘贴结果 {data_list}')
-            # 保存结果
-            if config['auto_save']:
-                save_config()
-            self.tableWidget.blockSignals(False)
+            else:
+                # 复制增加了剪贴板写入 这个分支可能已经不会触发了 以后考虑删除
+                if not self.copied_cells:
+                    return
+                r = self.tableWidget.currentRow() - self.copied_cells[0].row()
+                c = self.tableWidget.currentColumn() - self.copied_cells[0].column()
+                logger.info(f'准备粘贴 {len(self.copied_cells)} 个')
+                for cell in self.copied_cells:
+                    new_r = cell.row() + r
+                    new_c = cell.column() + c
+                    if new_c > (len(headers) - 1):
+                        # 忽略跨行数据 防止数组越界
+                        continue
+                    logger.info(f'粘贴数据 {new_r, new_c, cell.data()}')
+                    item = QTableWidgetItem(cell.data())
+                    if new_c in config['center_columns']:
+                        item.setTextAlignment(Qt.AlignCenter)
+                    self.tableWidget.setItem(new_r, new_c, item)
+                    data_list[new_r][new_c] = cell.data()
+                    logger.info(f'粘贴结果 {data_list}')
+                # 保存结果
+                if config['auto_save']:
+                    save_config()
+                self.tableWidget.blockSignals(False)
 
         # 搜索
         elif event.key() == Qt.Key_F and (event.modifiers() & Qt.ControlModifier):
