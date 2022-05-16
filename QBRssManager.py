@@ -202,9 +202,10 @@ class CustomEditor(QtWidgets.QLineEdit):
         logger.info(f'process_text() {text}')
         logger.info(f'self.index {self.index.row(), self.index.column()}')
         data_list[self.index.row()][self.index.column()] = text
-        include_text = data_list[self.index.row()][2]
-        exclude_text = data_list[self.index.row()][3]
-        self.parent_app.text_browser.filter_type_hint(include_text, exclude_text)
+        if self.index.column() in [2, 3]:
+            include_text = data_list[self.index.row()][2]
+            exclude_text = data_list[self.index.row()][3]
+            self.parent_app.text_browser.filter_type_hint(include_text, exclude_text)
 
 
 class CustomDelegate(QtWidgets.QStyledItemDelegate):
