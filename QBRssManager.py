@@ -203,9 +203,7 @@ class CustomEditor(QtWidgets.QLineEdit):
         logger.info(f'self.index {self.index.row(), self.index.column()}')
         data_list[self.index.row()][self.index.column()] = text
         if self.index.column() in [2, 3]:
-            include_text = data_list[self.index.row()][2]
-            exclude_text = data_list[self.index.row()][3]
-            self.parent_app.text_browser.filter_type_hint(include_text, exclude_text)
+            self.parent_app.text_browser.filter_type_hint()
 
 
 class CustomDelegate(QtWidgets.QStyledItemDelegate):
@@ -228,7 +226,9 @@ class CustomQTextBrowser(QTextBrowser):
         super().__init__(parent_app)
         self.parent_app = parent_app
 
-    def filter_type_hint(self, include_text, exclude_text):
+    def filter_type_hint(self):
+        include_text = data_list[self.parent_app.tableWidget.currentItem().row()][2]
+        exclude_text = data_list[self.parent_app.tableWidget.currentItem().row()][3]
         type_hints = self.parent_app.tableWidget.type_hints
         # 清空
         self.parent_app.text_browser.clear()
@@ -758,9 +758,7 @@ class App(QWidget):
                 self.text_browser.clear()
                 res = self.load_type_hints(currentQTableWidgetItem.row())
                 if res:
-                    include_text = data_list[currentQTableWidgetItem.row()][2]
-                    exclude_text = data_list[currentQTableWidgetItem.row()][3]
-                    self.text_browser.filter_type_hint(include_text, exclude_text)
+                    self.text_browser.filter_type_hint()
 
     @pyqtSlot()
     def on_move_up_click(self):
@@ -988,9 +986,7 @@ class App(QWidget):
                 self.text_browser.clear()
                 res = self.load_type_hints(currentQTableWidgetItem.row())
                 if res:
-                    include_text = data_list[currentQTableWidgetItem.row()][2]
-                    exclude_text = data_list[currentQTableWidgetItem.row()][3]
-                    self.text_browser.filter_type_hint(include_text, exclude_text)
+                    self.text_browser.filter_type_hint()
 
             self.tableWidget.edit(self.tableWidget.currentIndex())
 
