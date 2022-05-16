@@ -1,3 +1,4 @@
+import fnmatch
 import json
 import os
 import re
@@ -161,6 +162,51 @@ def try_convert_time(s):
     return s
 
 
+def wildcard_match_check(s, keywords_groups_string):
+    # 多组关键字用 | 隔开
+    # 单组关键字内 多个条件用空格隔开
+    # 支持通配符匹配
+
+    logger.info(f'测试字符 {s}')
+    logger.info(f'匹配关键字 {keywords_groups_string}')
+
+    # 关键字分割，不对 \| 进行分割
+    # https://stackoverflow.com/questions/18092354/python-split-string-without-splitting-escaped-character
+    keywords_groups = re.split(r'(?<!\\)\|', keywords_groups_string)
+
+    logger.info(f'关键字分组 {keywords_groups}')
+
+    group_results = []
+    for keywords in keywords_groups:
+        # 防止空格造成空匹配
+        keywords = keywords.strip()
+        if not keywords:
+            continue
+
+        # 单组关键字必须全部满足
+        match_list = []
+        for keyword in keywords.split():
+            logger.info(keyword)
+            # 防止空格造成空匹配
+            keyword = keyword.strip()
+            if not keyword:
+                continue
+            # 关键字匹配
+            if keyword.lower() in s.lower():
+                match_list.append(True)
+                continue
+            # 通配符匹配
+            if fnmatch.fnmatch(s.lower(), keyword.lower()):
+                match_list.append(True)
+                continue
+            match_list.append(False)
+
+        group_results.append(all(match_list))
+
+    logger.info(f'group_results {group_results}')
+    return any(group_results)
+
+
 qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
 
 
@@ -244,9 +290,11 @@ class CustomQTextBrowser(QTextBrowser):
                 # 不包含关键字
                 flag2 = False
                 if include_text:
-                    flag1 = all(x.lower() in type_hint.lower() for x in include_text.split(' '))
+                    # flag1 = all(x.lower() in type_hint.lower() for x in include_text.split(' '))
+                    flag1 = wildcard_match_check(type_hint, include_text)
                 if exclude_text:
-                    flag2 = all(x.lower() in type_hint.lower() for x in exclude_text.split(' '))
+                    # flag2 = all(x.lower() in type_hint.lower() for x in exclude_text.split(' '))
+                    flag2 = wildcard_match_check(type_hint, exclude_text)
                 if flag1 and not flag2:
                     filtered_hints.append(type_hint)
             if filtered_hints:
