@@ -167,14 +167,14 @@ def wildcard_match_check(s, keywords_groups_string):
     # 单组关键字内 多个条件用空格隔开
     # 支持通配符匹配
 
-    logger.info(f'测试字符 {s}')
-    logger.info(f'匹配关键字 {keywords_groups_string}')
+    # logger.info(f'测试字符 {s}')
+    # logger.info(f'匹配关键字 {keywords_groups_string}')
 
     # 关键字分割，不对 \| 进行分割
     # https://stackoverflow.com/questions/18092354/python-split-string-without-splitting-escaped-character
     keywords_groups = re.split(r'(?<!\\)\|', keywords_groups_string)
 
-    logger.info(f'关键字分组 {keywords_groups}')
+    # logger.info(f'关键字分组 {keywords_groups}')
 
     group_results = []
     for keywords in keywords_groups:
@@ -186,7 +186,7 @@ def wildcard_match_check(s, keywords_groups_string):
         # 单组关键字必须全部满足
         match_list = []
         for keyword in keywords.split():
-            logger.info(keyword)
+            # logger.info(keyword)
             # 防止空格造成空匹配
             keyword = keyword.strip()
             if not keyword:
@@ -203,7 +203,7 @@ def wildcard_match_check(s, keywords_groups_string):
 
         group_results.append(all(match_list))
 
-    logger.info(f'group_results {group_results}')
+    # logger.info(f'group_results {group_results}')
     return any(group_results)
 
 
