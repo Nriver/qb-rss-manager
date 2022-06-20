@@ -400,7 +400,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.1.6 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.1.7 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -786,7 +786,7 @@ class App(QWidget):
         # 设置图标
         self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         # 只能通过设置样式来修改宽度, 其它设置没用
-        self.msg.setStyleSheet("QLabel {min-width: 70px;}")
+        self.msg.setStyleSheet("QLabel {min-width: 80px;}")
         # 提示信息
         self.msg.setText(message)
         # 标题
