@@ -741,6 +741,7 @@ class App(QWidget):
         self.search_window.last_tab = index
 
     def do_replace(self):
+        global data_list
         logger.info(f'do_replace() 替换当前单元格内容')
         source_text = self.search_window.text_edit_list[self.search_window.last_tab].text()
         if not source_text:
@@ -750,10 +751,12 @@ class App(QWidget):
         pat = re.compile(re.escape(source_text), re.IGNORECASE)
         result = pat.sub(target_text, self.tableWidget.currentItem().text())
         logger.info(result)
+        data_list[self.tableWidget.currentItem().row()][self.tableWidget.currentItem().column()] = result
         self.tableWidget.currentItem().setText(result)
         self.do_search()
 
     def do_replace_all(self):
+        global data_list
         logger.info(f'do_replace_all() 替换全部单元格内容')
         source_text = self.search_window.text_edit_list[self.search_window.last_tab].text()
         if not source_text:
@@ -776,6 +779,8 @@ class App(QWidget):
                 item = QTableWidgetItem(d)
                 if cy in config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
+                # 注意这里要更新data_list的数据
+                data_list[cx][cy] = d
                 self.tableWidget.setItem(cx, cy, item)
 
         self.tableWidget.blockSignals(False)
@@ -992,6 +997,7 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_clean_row_click(self):
+        global data_list
         # 防止触发 cellChange 事件导致重复更新
         self.tableWidget.blockSignals(True)
         data_list = clean_data_list()
