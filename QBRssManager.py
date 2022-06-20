@@ -1237,7 +1237,9 @@ class App(QWidget):
 
         # 修改为只删除当前行, 不清理列表
         r = self.tableWidget.currentRow()
-        data_list[r] = ['' for _ in range(len(headers))]
+        # 修复bug 直接pop掉数据而不是修改数据 避免数据序列污染
+        data_list.pop(r)
+        data_list.append(['' for _ in range(len(headers))])
         cx = r
         for cy in range(len(headers)):
             item = QTableWidgetItem('')
