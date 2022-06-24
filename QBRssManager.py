@@ -749,7 +749,10 @@ class App(QWidget):
         target_text = self.search_window.lineEditReplaceTarget.text()
         logger.info(f'{source_text} 替换为 {target_text}')
         pat = re.compile(re.escape(source_text), re.IGNORECASE)
-        result = pat.sub(target_text, self.tableWidget.currentItem().text())
+        try:
+            result = pat.sub(target_text, self.tableWidget.currentItem().text())
+        except:
+            result = self.tableWidget.currentItem().text().replace(source_text, target_text)
         logger.info(result)
         data_list[self.tableWidget.currentItem().row()][self.tableWidget.currentItem().column()] = result
         self.tableWidget.currentItem().setText(result)
@@ -775,7 +778,10 @@ class App(QWidget):
         for cx, row in enumerate(data_list):
             for cy, d in enumerate(row):
                 # 替换数据
-                d = pat.sub(target_text, d)
+                try:
+                    d = pat.sub(target_text, d)
+                except:
+                    d = d.replace(source_text, target_text)
                 item = QTableWidgetItem(d)
                 if cy in config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
