@@ -151,7 +151,7 @@ def try_convert_time(s):
     简单粗暴的字符串转换年月
     比如 2021.11 2021-11 2021/11 转换成2021年11月
     """
-    res = re.match(r'^(\d{4})[\.\-\_\\/](\d{1,2})$', s)
+    res = re.match(r'^(\d{4})[.\-_\\/](\d{1,2})$', s)
     if res:
         year = str(res[1])
         month = str(res[2])
