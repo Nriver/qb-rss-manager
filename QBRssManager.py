@@ -1,6 +1,7 @@
 import fnmatch
 import json
 import os
+import platform
 import re
 import socket
 import subprocess
@@ -144,6 +145,13 @@ if config['use_qb_api']:
 
 def format_path(s):
     return s.replace('\\', '/').replace('//', '/')
+
+
+def format_path_by_system(s):
+    if platform.system() == 'Windows':
+        return format_path(s).replace('/', '\\')
+    else:
+        return format_path(s)
 
 
 def try_convert_time(s):
