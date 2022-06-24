@@ -211,8 +211,18 @@ def wildcard_match_check(s, keywords_groups_string):
 
         group_results.append(all(match_list))
 
-    # logger.info(f'group_results {group_results}')
     return any(group_results)
+
+
+def try_split_date_and_name(s):
+    if not s or ' ' not in s:
+        return '', s
+    tmp_date, tmp_name = s.split(' ', 1)
+    pat = '^\d{4}年\d{1,2}月$'
+    res = re.match(pat, tmp_date)
+    if res:
+        return res[0], tmp_name
+    return '', s
 
 
 qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
@@ -643,16 +653,19 @@ class App(QWidget):
         self.down_action = QAction("向下移动")
         self.delete_action = QAction("删除整条订阅")
         self.clear_action = QAction("清理空行")
+        self.import_exist_qb_rule_action = QAction("从qb导入已有规则")
 
         self.up_action.triggered.connect(self.on_move_up_click)
         self.down_action.triggered.connect(self.on_move_down_click)
         self.delete_action.triggered.connect(self.menu_delete_action)
         self.clear_action.triggered.connect(self.on_clean_row_click)
+        self.import_exist_qb_rule_action.triggered.connect(self.on_import_exist_qb_rule_action)
 
         self.menu.addAction(self.up_action)
         self.menu.addAction(self.down_action)
         self.menu.addAction(self.delete_action)
         self.menu.addAction(self.clear_action)
+        self.menu.addAction(self.import_exist_qb_rule_action)
         self.menu.exec_(self.tableWidget.mapToGlobal(a))
         # return
 
@@ -907,6 +920,74 @@ class App(QWidget):
         self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
 
     @pyqtSlot()
+    def on_import_exist_qb_rule_action(self):
+        global data_list
+        logger.info('读取qb订阅规则')
+        try:
+            with open(config['rules_path'], 'r', encoding='utf-8') as f:
+                rss_rules = json.loads(f.read())
+        except:
+            return
+
+        # 对比表格内已有数据
+        exist_data = {}
+        for x in clean_data_list():
+            item = {
+                "enabled": True,
+                "mustContain": x[2],
+                "mustNotContain": x[3],
+                "savePath": format_path(x[5]),
+                "affectedFeeds": [x[6], ],
+                "assignedCategory": x[7]
+            }
+            exist_data[x[0] + ' ' + x[1]] = item
+
+        new_rules = []
+        for x in rss_rules:
+            if x in exist_data and rss_rules[x] == exist_data[x]:
+                # logger.info('重复数据 跳过')
+                continue
+            else:
+                new_rules.append(x)
+        logger.info(f'新数据 {len(new_rules)}')
+        logger.info(new_rules)
+
+        if not new_rules:
+            return
+
+        # 添加新数据 刷新表格
+        self.tableWidget.blockSignals(True)
+        data_list = clean_data_list()
+        for x in new_rules:
+            d = rss_rules[x]
+
+            # 尝试分离日期
+            release_date, series_name = try_split_date_and_name(x)
+
+            data_list.append([
+                release_date,
+                series_name,
+                d['mustContain'],
+                d['mustNotContain'],
+                '',
+                format_path_by_system(d['savePath']),
+                ','.join(d['affectedFeeds']),
+                d['assignedCategory'],
+            ])
+        # 长度补充
+        if len(data_list) < config['max_row_size']:
+            for _ in range(config['max_row_size'] - len(data_list)):
+                data_list.append(['' for x in range(len(headers))])
+        # 更新整个列表
+        for cx, row in enumerate(data_list):
+            for cy, d in enumerate(row):
+                item = QTableWidgetItem(d)
+                if cy in config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
+        self.tableWidget.blockSignals(False)
+
+    @pyqtSlot()
     def on_export_click(self):
         logger.info('生成qb订阅规则')
 
@@ -931,7 +1012,6 @@ class App(QWidget):
             # 清空已有规则
             rss_rules = qb_client.rss_rules()
             for x in rss_rules:
-                print(x)
                 qb_client.rss_remove_rule(x)
             # 添加新规则
             for x in clean_data_list():
