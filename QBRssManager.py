@@ -955,9 +955,21 @@ class App(QWidget):
 
         new_rules = []
         for x in rss_rules:
-            if x in exist_data and rss_rules[x] == exist_data[x]:
-                # logger.info('重复数据 跳过')
-                continue
+            if x in exist_data:
+                if rss_rules[x] == exist_data[x]:
+                    # logger.info('重复数据 跳过')
+                    continue
+                else:
+                    # logger.info('===== 比较数据 begin =====')
+                    # logger.info(f'规则 {rss_rules[x]}')
+                    # logger.info('')
+                    # logger.info(f'现存数据 {exist_data[x]}')
+                    check_fields = ['mustContain', 'mustNotContain', 'savePath', 'affectedFeeds', 'assignedCategory']
+                    for check_field in check_fields:
+                        if rss_rules[x][check_field] != exist_data[x][check_field]:
+                            new_rules.append(x)
+                            continue
+                    # logger.info('===== 比较数据 end =====')
             else:
                 new_rules.append(x)
         logger.info(f'新数据 {len(new_rules)}')
