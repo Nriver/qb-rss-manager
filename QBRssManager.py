@@ -225,6 +225,17 @@ def try_split_date_and_name(s):
     return '', s
 
 
+def check_qb_port_open():
+    # 检查端口可用性
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = (config['qb_api_ip'], int(config['qb_api_port']))
+    result_of_check = a_socket.connect_ex(location)
+    if result_of_check == 0:
+        return True
+    else:
+        return False
+
+
 qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
 
 
@@ -991,18 +1002,8 @@ class App(QWidget):
     def on_export_click(self):
         logger.info('生成qb订阅规则')
 
-        # 检查端口可用性
-        port_open = False
-        if config['use_qb_api'] == 1:
-            a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            location = (config['qb_api_ip'], int(config['qb_api_port']))
-            result_of_check = a_socket.connect_ex(location)
-            if result_of_check == 0:
-                port_open = True
-            else:
-                port_open = False
-
-        if config['use_qb_api'] == 1 and port_open:
+        # 尝试通过api和qb通信
+        if config['use_qb_api'] == 1 and check_qb_port_open():
             # 使用qb的api, 可以不重启qb
             try:
                 qb_client.auth_log_in()
