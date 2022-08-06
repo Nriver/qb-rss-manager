@@ -1,7 +1,6 @@
 import fnmatch
 import json
 import os
-import platform
 import re
 import socket
 import subprocess
@@ -96,6 +95,10 @@ try:
             config['qb_api_ip'] = '127.0.0.1'
         if 'qb_api_port' not in config:
             config['qb_api_port'] = 38080
+        if 'qb_api_username' not in config:
+            config['qb_api_username'] = ''
+        if 'qb_api_password' not in config:
+            config['qb_api_password'] = ''
         if 'text_browser_height' in config:
             del config['text_browser_height']
 except:
@@ -148,7 +151,12 @@ def format_path(s):
 
 
 def format_path_by_system(s):
-    if platform.system() == 'Windows':
+    # 保存路径格式化 兼容linux路径
+    # 由于有远程调用api的需求, 所以这里不能限制斜杠格式
+    # 简单判断一下吧
+    if not s:
+        return ''
+    if s[0] != '/':
         return format_path(s).replace('/', '\\')
     else:
         return format_path(s)
@@ -231,8 +239,10 @@ def check_qb_port_open():
     location = (config['qb_api_ip'], int(config['qb_api_port']))
     result_of_check = a_socket.connect_ex(location)
     if result_of_check == 0:
+        logger.info('qb端口可用')
         return True
     else:
+        logger.info('qb端口不可用')
         return False
 
 
@@ -429,7 +439,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.1.8 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.1.9 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -934,11 +944,29 @@ class App(QWidget):
     def on_import_exist_qb_rule_action(self):
         global data_list
         logger.info('读取qb订阅规则')
-        try:
-            with open(config['rules_path'], 'r', encoding='utf-8') as f:
-                rss_rules = json.loads(f.read())
-        except:
-            return
+
+        # 尝试通过api读取rss配置
+        rss_rules = []
+
+        # 尝试通过api和qb通信
+        if config['use_qb_api'] == 1 and check_qb_port_open():
+            # 使用qb的api, 可以不重启qb
+            try:
+                qb_client.auth_log_in(username=config['qb_api_username'], password=config['qb_api_password'])
+                logger.info('通过api获取已有规则')
+                rss_rules = qb_client.rss_rules()
+            except qbittorrentapi.LoginFailed as e:
+                logger.error(e)
+        else:
+            logger.info('无法通过qb的api获取rss数据')
+
+        if not rss_rules:
+            logger.info('尝试读取本机rss配置文件')
+            try:
+                with open(config['rules_path'], 'r', encoding='utf-8') as f:
+                    rss_rules = json.loads(f.read())
+            except:
+                return
 
         # 对比表格内已有数据
         exist_data = {}
@@ -947,7 +975,7 @@ class App(QWidget):
                 "enabled": True,
                 "mustContain": x[2],
                 "mustNotContain": x[3],
-                "savePath": format_path(x[5]),
+                "savePath": format_path_by_system(x[5]),
                 "affectedFeeds": [x[6], ],
                 "assignedCategory": x[7]
             }
@@ -1034,7 +1062,7 @@ class App(QWidget):
                         "enabled": True,
                         "mustContain": x[2],
                         "mustNotContain": x[3],
-                        "savePath": format_path(x[5]),
+                        "savePath": format_path_by_system(x[5]),
                         "affectedFeeds": [x[6], ],
                         "assignedCategory": x[7]
                     }
@@ -1049,7 +1077,7 @@ class App(QWidget):
                     "enabled": True,
                     "mustContain": x[2],
                     "mustNotContain": x[3],
-                    "savePath": format_path(x[5]),
+                    "savePath": format_path_by_system(x[5]),
                     "affectedFeeds": [x[6], ],
                     "assignedCategory": x[7]
                 }
