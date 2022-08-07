@@ -36,6 +36,7 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 `qb_api_password` qb的密码
 
 之后打开`QBRssManager.exe`右键即可导入已有规则
+(图片看不清可以点击看大图)
 
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_read.gif)
 
