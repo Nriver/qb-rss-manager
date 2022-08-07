@@ -546,7 +546,7 @@ class App(QWidget):
         self.move_down_button = QPushButton('向下移动', self)
         self.move_down_button.clicked.connect(self.on_move_down_click)
 
-        self.load_config_button = QPushButton('恢复上一次保存配置', self)
+        self.load_config_button = QPushButton('恢复上一次保存的配置', self)
         self.load_config_button.clicked.connect(self.on_load_config_click)
 
         self.save_button = QPushButton('保存配置', self)
@@ -673,19 +673,27 @@ class App(QWidget):
         self.up_action = QAction("向上移动")
         self.down_action = QAction("向下移动")
         self.delete_action = QAction("删除整条订阅")
+        self.delete_all_action = QAction("删除所有订阅")
         self.clear_action = QAction("清理空行")
+        self.load_config_action = QAction("恢复上一次保存的配置")
         self.import_exist_qb_rule_action = QAction("从qb导入已有规则")
 
         self.up_action.triggered.connect(self.on_move_up_click)
         self.down_action.triggered.connect(self.on_move_down_click)
         self.delete_action.triggered.connect(self.menu_delete_action)
+        self.delete_all_action.triggered.connect(self.menu_delete_all_action)
         self.clear_action.triggered.connect(self.on_clean_row_click)
+        self.load_config_action.triggered.connect(self.on_load_config_click)
         self.import_exist_qb_rule_action.triggered.connect(self.on_import_exist_qb_rule_action)
 
         self.menu.addAction(self.up_action)
         self.menu.addAction(self.down_action)
+        self.menu.addSeparator()
         self.menu.addAction(self.delete_action)
+        self.menu.addAction(self.delete_all_action)
         self.menu.addAction(self.clear_action)
+        self.menu.addSeparator()
+        self.menu.addAction(self.load_config_action)
         self.menu.addAction(self.import_exist_qb_rule_action)
         self.menu.exec_(self.tableWidget.mapToGlobal(a))
         # return
@@ -1391,6 +1399,20 @@ class App(QWidget):
                 item.setTextAlignment(Qt.AlignCenter)
             self.tableWidget.setItem(cx, cy, item)
 
+        self.tableWidget.blockSignals(False)
+
+    def menu_delete_all_action(self):
+        # 右键菜单 删除所有订阅
+        logger.info('删除所有订阅')
+        self.tableWidget.blockSignals(True)
+        for x in range(len(data_list)):
+            data_list[x] = ['' for _ in range(len(headers))]
+        for cx in range(len(data_list)):
+            for cy in range(len(headers)):
+                item = QTableWidgetItem('')
+                if cy in config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
         self.tableWidget.blockSignals(False)
 
     def resizeEvent(self, event):
