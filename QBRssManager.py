@@ -439,7 +439,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.1.9 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.2.0 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -982,7 +982,8 @@ class App(QWidget):
                 "affectedFeeds": [x[6], ],
                 "assignedCategory": x[7]
             }
-            exist_data[x[0] + ' ' + x[1]] = item
+            # 这里strip一下, 防止没有播出时间列匹配不到而重复导入
+            exist_data[(x[0] + ' ' + x[1]).strip()] = item
 
         new_rules = []
         for x in rss_rules:
