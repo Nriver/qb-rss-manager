@@ -948,25 +948,28 @@ class App(QWidget):
         # 尝试通过api读取rss配置
         rss_rules = []
 
-        # 尝试通过api和qb通信
+        self.text_browser.append('尝试通过api和qb通信')
         if config['use_qb_api'] == 1 and check_qb_port_open():
             # 使用qb的api, 可以不重启qb
             try:
                 qb_client.auth_log_in(username=config['qb_api_username'], password=config['qb_api_password'])
-                logger.info('通过api获取已有规则')
+                self.text_browser.append('通过api获取已有规则')
                 rss_rules = qb_client.rss_rules()
             except qbittorrentapi.LoginFailed as e:
-                logger.error(e)
+                self.text_browser.append('api登录失败')
+                self.text_browser.append(e)
         else:
-            logger.info('无法通过qb的api获取rss数据')
+            self.text_browser.append('无法通过qb的api获取rss数据')
 
         if not rss_rules:
-            logger.info('尝试读取本机rss配置文件')
+            self.text_browser.append('尝试读取本机rss配置文件')
             try:
                 with open(config['rules_path'], 'r', encoding='utf-8') as f:
                     rss_rules = json.loads(f.read())
             except:
                 return
+
+        self.text_browser.append('规则获取成功')
 
         # 对比表格内已有数据
         exist_data = {}
@@ -1046,7 +1049,7 @@ class App(QWidget):
         if config['use_qb_api'] == 1 and check_qb_port_open():
             # 使用qb的api, 可以不重启qb
             try:
-                qb_client.auth_log_in()
+                qb_client.auth_log_in(username=config['qb_api_username'], password=config['qb_api_password'])
             except qbittorrentapi.LoginFailed as e:
                 logger.error(e)
 
@@ -1067,7 +1070,8 @@ class App(QWidget):
                         "assignedCategory": x[7]
                     }
                 )
-            subprocess.Popen([config['qb_executable']])
+            # api通信不需要执行qb的exe
+            # subprocess.Popen([config['qb_executable']])
         else:
             # 不使用qb的api, 需要重启qb
             output_data = {}
