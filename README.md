@@ -4,11 +4,44 @@ qBittorrent rss订阅 下载规则管理
 
 <a href="https://count.getloli.com"><img align="center" src="https://count.getloli.com/get/@Nriver_qb-rss-manager"></a><br>
 
-# 单独使用
+# windows环境下的qb使用
 
 1. 从release下载最新exe程序
-2. 首次运行会生成config.json, 修改`qb_executable`和`rules_path`为你的
+2. 首次运行会生成config.json, 修改`qb_executable`和`rules_path`为你的qb主程序
 3. 运行exe进行编辑
+
+已有的订阅规则可以通过右键导入. 编辑好之后记得先保存再生成规则
+
+# docker等环境下的qb使用
+
+docker等环境下, 程序可以通过api远程管理qbittorrent
+
+打开`QBRssManager.exe`, 保存设置, 桌面右下角托盘里把它完全关掉
+编辑`config.json`
+修改以下内容
+
+```
+"use_qb_api": 1,
+"qb_api_ip": "192.168.1.111",
+"qb_api_port": 8080,
+"qb_api_username": "admin",
+"qb_api_password": "adminadmin"
+```
+
+参数说明
+`use_qb_api` 启用api通信
+`qb_api_ip` qb的ip地址
+`qb_api_port` qb的端口
+`qb_api_username` qb的用户名
+`qb_api_password` qb的密码
+
+之后打开`QBRssManager.exe`右键即可导入已有规则
+
+![](docs/rss_read.gif)
+
+点击生成规则可以写入到qb里
+
+![](docs/rss_write.gif)
 
 # qb-rss-manager 懒人包
 
