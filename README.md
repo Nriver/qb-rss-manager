@@ -37,11 +37,11 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 
 之后打开`QBRssManager.exe`右键即可导入已有规则
 
-![](docs/rss_read.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_read.gif)
 
 点击生成规则可以写入到qb里
 
-![](docs/rss_write.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_write.gif)
 
 # qb-rss-manager 懒人包
 
@@ -65,16 +65,16 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 5. 仿照示例写自己的规则, 重复3-4
 
 初始化  
-![](aio/0.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/0.gif)
 
 加载RSS数据  
-![](aio/1.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/1.gif)
 
 管理RSS订阅  
-![](aio/2.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/2.gif)
 
 等待自动重命名  
-![](aio/3.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/3.gif)
 
 ## 提示
 
