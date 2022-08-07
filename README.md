@@ -44,6 +44,13 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_write.gif)
 
+# config.json部分配置参数说明
+
+很多配置里的 1表示开启 0表示关闭, 以下不重复说明
+
+`close_to_tray` 点击关闭最小化到托盘. 默认开启
+`data_auto_zfill` 播出时间列输入的日期自动格式化. 比如 2022.8 2022-8 2022/8 转换成2022年8月, 默认开启
+
 # qb-rss-manager 懒人包
 
 填好想要自动下载的文件信息，就能让qb自动下载想要的番剧，自动追番必备，用过都说好！
