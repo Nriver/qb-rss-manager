@@ -10,14 +10,14 @@ from datetime import datetime
 from zipfile import ZipFile
 
 import qbittorrentapi
-import win32gui
+
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter, \
     QTabWidget, QLineEdit
 from loguru import logger
-from win32con import WM_MOUSEMOVE
+
 
 # 表头
 headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址', '种子类型']
@@ -105,14 +105,26 @@ except:
 
     # 默认配置
     # rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
-    rules_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\download_rules.json')
-    feeds_json_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
-    rss_article_folder = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
+    if os.name == 'nt':
+        # Windows 系统默认配置
+        # qb主程序路径
+        # qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
+        qb_executable = os.path.expandvars(r'%ProgramW6432%\qBittorrent\qbittorrent.exe')
+        # qb配置文件路径
+        rules_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\download_rules.json')
+        feeds_json_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
+        rss_article_folder = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
+    else:
+        # Linux 桌面系统默认配置
+        qb_executable = os.path.expanduser(r'qbittorrent')
+        rules_path = os.path.expanduser(r'~/.config/qBittorrent/rss/download_rules.json')
+        feeds_json_path = os.path.expanduser(r'~/.config/qBittorrent/rss/feeds.json')
+        rss_article_folder = os.path.expanduser(r'~/.config/qBittorrent/rss/articles')
+
+
     # 保存后打开qb主程序 1为自动打开 其它值不自动打开
     open_qb_after_export = 1
-    # qb主程序路径
-    # qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
-    qb_executable = os.path.expandvars(r'%ProgramW6432%\qBittorrent\qbittorrent.exe')
+
     data_list = [
     ]
     # 自动保存
@@ -1108,8 +1120,9 @@ class App(QWidget):
                     pass
                 # 启动qb
                 subprocess.Popen([config['qb_executable']])
-                # 刷新任务栏托盘图标
-                refresh_tray()
+                if os.name == 'nt':
+                    # windows 刷新任务栏托盘图标
+                    refresh_tray()
 
     @pyqtSlot()
     def on_load_config_click(self):
@@ -1475,6 +1488,8 @@ class TrayIcon(QSystemTrayIcon):
 
 
 def refresh_tray():
+    import win32gui
+    from win32con import WM_MOUSEMOVE
     logger.info('刷新任务栏托盘图标')
     # 刷新任务栏托盘图标, 去掉强制关闭进程后的残留图标
     hShellTrayWnd = win32gui.FindWindow("Shell_trayWnd", "")
