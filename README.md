@@ -10,7 +10,7 @@ qBittorrent rss订阅 下载规则管理
 * [qb-rss-manager](#qb-rss-manager)
 * [Windows/Linux桌面环境下的qb使用](#windowslinux桌面环境下的qb使用)
 * [docker等环境下的qb使用](#docker等环境下的qb使用)
-* [导入/导出规则](#导入导出规则)
+* [导入/导出规则进行分享](#导入导出规则进行分享)
 * [config.json部分配置参数说明](#configjson部分配置参数说明)
 * [qb-rss-manager 懒人包](#qb-rss-manager-懒人包)
     * [警告](#警告)
@@ -62,9 +62,11 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_write.gif)
 
-# 导入/导出规则
+# 导入/导出规则进行分享
 
 在表格里右键就有导入和导出功能了，快把你的订阅规则和朋友分享吧！
+
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/popup_menu.gif)
 
 # config.json部分配置参数说明
 
