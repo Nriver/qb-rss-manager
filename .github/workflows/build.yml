@@ -20,7 +20,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        draft: false
+        draft: true
         prerelease: false
     - name: 输出发布地址到文件
       run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
