@@ -8,7 +8,7 @@ qBittorrent rss订阅 下载规则管理
 <!--ts-->
 
 * [qb-rss-manager](#qb-rss-manager)
-* [windows环境下的qb使用](#windows环境下的qb使用)
+* [Windows/Linux桌面环境下的qb使用](#windowslinux桌面环境下的qb使用)
 * [docker等环境下的qb使用](#docker等环境下的qb使用)
 * [导入/导出规则](#导入导出规则)
 * [config.json部分配置参数说明](#configjson部分配置参数说明)
@@ -22,11 +22,11 @@ qBittorrent rss订阅 下载规则管理
 
 <!--te-->
 
-# windows环境下的qb使用
+# Windows/Linux桌面环境下的qb使用
 
-1. 从release下载最新exe程序
-2. 首次运行会生成config.json, 修改`qb_executable`和`rules_path`为你的qb主程序
-3. 运行exe进行编辑
+1. 从release下载最新对应平台的可执行文件
+2. 首次运行会生成config.json, 请修改`qb_executable`和`rules_path`为你的qb主程序路径, 如果安装在默认路径可以不修改.
+3. 运行程序进行编辑
 
 已有的订阅规则可以通过右键导入. 编辑好之后记得先保存再生成规则
 
