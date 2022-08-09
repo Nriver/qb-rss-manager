@@ -38,11 +38,12 @@ jobs:
     strategy:
       matrix:
         # 这里可以针对三大系统进行编译，很方便就能实现跨平台编译
+        # mac要打出app包需要特殊处理，否则就是普通的可执行文件
         include:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                pyinstaller QBRssManager.spec &&
+                pyinstaller QBRssManager-mac.spec &&
                 cd dist/ &&
                 zip -r9 QBRssManager-mac.zip QBRssManager.app/
             OUT_FILE_NAME: QBRssManager-mac.zip

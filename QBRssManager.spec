@@ -4,7 +4,8 @@
 block_cipher = None
 
 
-a = Analysis(['QBRssManager.py'],
+a = Analysis(
+             ['QBRssManager.py'],
              pathex=[],
              binaries=[],
              datas=[],
@@ -16,11 +17,12 @@ a = Analysis(['QBRssManager.py'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,
-             noarchive=False)
-pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+             noarchive=False,
+)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 a.datas += [('./QBRssManager.ico', './QBRssManager.ico', 'DATA')]
-exe = EXE(pyz,
+exe = EXE(
+          pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
@@ -37,4 +39,6 @@ exe = EXE(pyz,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
-          entitlements_file=None , icon='QBRssManager.ico')
+          entitlements_file=None,
+	  icon='QBRssManager.ico'
+)
