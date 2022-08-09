@@ -69,7 +69,7 @@ jobs:
     - name: 初始化 Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: 3.10
+        python-version: '3.10'
         # 使用缓存 https://github.com/marketplace/actions/setup-python
         # 把依赖缓存起来，下次可以直接使用
         cache: 'pip'
