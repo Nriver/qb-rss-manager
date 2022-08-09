@@ -1078,6 +1078,10 @@ class App(QWidget):
         share_file_path = file_info[0]
         logger.info(f'导入文件 {share_file_path}')
 
+        if not share_file_path:
+            # 没有选择文件时的异常处理
+            return
+
         # 添加新数据 刷新表格
         self.tableWidget.blockSignals(True)
 
@@ -1108,10 +1112,12 @@ class App(QWidget):
         global data_list
         logger.info('导出规则到文件进行分享')
         # 这里用完整路径可以设置默认名称
-        file_info = QFileDialog.getSaveFileName(self, "选择输出目录文件", os.path.join(resource_path('.'), 'share.json'), "json 文件(*.json)")
+        file_info = QFileDialog.getSaveFileName(self, "选择输出目录文件", os.path.join(resource_path('.'), 'rss订阅规则分享.json'), "json 文件(*.json)")
         share_file_path = file_info[0]
         logger.info(f'导出文件 {share_file_path}')
-
+        if not share_file_path:
+            # 没有选择文件时的异常处理
+            return
         with open(share_file_path, 'w', encoding='utf-8') as f:
             f.write(json.dumps(clean_data_list(), ensure_ascii=False, indent=4))
 
