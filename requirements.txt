@@ -3,3 +3,4 @@ pywin32; platform_system == "Windows"
 loguru
 qbittorrent-api
 pyinstaller
+pillow
