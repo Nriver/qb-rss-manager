@@ -15,7 +15,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter, \
-    QTabWidget, QLineEdit
+    QTabWidget, QLineEdit, QFileDialog
 from loguru import logger
 
 
@@ -689,6 +689,8 @@ class App(QWidget):
         self.clear_action = QAction("清理空行")
         self.load_config_action = QAction("恢复上一次保存的配置")
         self.import_exist_qb_rule_action = QAction("从qb导入已有规则")
+        self.import_from_share_file_action = QAction("从分享文件导入规则")
+        self.export_to_share_file_action = QAction("导出规则到文件进行分享")
 
         self.up_action.triggered.connect(self.on_move_up_click)
         self.down_action.triggered.connect(self.on_move_down_click)
@@ -697,6 +699,8 @@ class App(QWidget):
         self.clear_action.triggered.connect(self.on_clean_row_click)
         self.load_config_action.triggered.connect(self.on_load_config_click)
         self.import_exist_qb_rule_action.triggered.connect(self.on_import_exist_qb_rule_action)
+        self.import_from_share_file_action.triggered.connect(self.on_import_from_share_file_action)
+        self.export_to_share_file_action.triggered.connect(self.on_export_to_share_file_action)
 
         self.menu.addAction(self.up_action)
         self.menu.addAction(self.down_action)
@@ -707,6 +711,10 @@ class App(QWidget):
         self.menu.addSeparator()
         self.menu.addAction(self.load_config_action)
         self.menu.addAction(self.import_exist_qb_rule_action)
+        self.menu.addSeparator()
+        self.menu.addAction(self.import_from_share_file_action)
+        self.menu.addAction(self.export_to_share_file_action)
+
         self.menu.exec_(self.tableWidget.mapToGlobal(a))
         # return
 
@@ -1061,6 +1069,51 @@ class App(QWidget):
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
         self.tableWidget.blockSignals(False)
+
+    @pyqtSlot()
+    def on_import_from_share_file_action(self):
+        global data_list
+        logger.info('从分享文件导入规则')
+        file_info = QFileDialog.getOpenFileName(self, "选择文件", resource_path('.'), "json 文件(*.json)")
+        share_file_path = file_info[0]
+        logger.info(f'导入文件 {share_file_path}')
+
+        # 添加新数据 刷新表格
+        self.tableWidget.blockSignals(True)
+
+        with open(share_file_path, 'r', encoding='utf-8') as f:
+            share_data = json.loads(f.read())
+            # 对比表格内已有数据
+            data_list = clean_data_list()
+            for x in share_data:
+                if x in data_list:
+                    continue
+                data_list.append(x)
+
+        # 长度补充
+        if len(data_list) < config['max_row_size']:
+            for _ in range(config['max_row_size'] - len(data_list)):
+                data_list.append(['' for x in range(len(headers))])
+        # 更新整个列表
+        for cx, row in enumerate(data_list):
+            for cy, d in enumerate(row):
+                item = QTableWidgetItem(d)
+                if cy in config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
+        self.tableWidget.blockSignals(False)
+
+    @pyqtSlot()
+    def on_export_to_share_file_action(self):
+        global data_list
+        logger.info('导出规则到文件进行分享')
+        # 这里用完整路径可以设置默认名称
+        file_info = QFileDialog.getSaveFileName(self, "选择输出目录文件", os.path.join(resource_path('.'), 'share.json'), "json 文件(*.json)")
+        share_file_path = file_info[0]
+        logger.info(f'导出文件 {share_file_path}')
+
+        with open(share_file_path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(clean_data_list(), ensure_ascii=False, indent=4))
 
     @pyqtSlot()
     def on_export_click(self):
