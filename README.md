@@ -66,7 +66,7 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 
 在表格里右键就有导入和导出功能了，快把你的订阅规则和朋友分享吧！
 
-![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/popup_menu.gif)
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/popup_menu.png)
 
 # config.json部分配置参数说明
 
