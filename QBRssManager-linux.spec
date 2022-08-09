@@ -13,7 +13,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['libxkbcommon-x11.so.0', ],
+    excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -22,16 +22,16 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 a.datas += [('./QBRssManager.ico', './QBRssManager.ico', 'DATA')]
 
-a.binaries = a.binaries - TOC([
-    ('libxkbcommon-x11.so.0', None, None),
-])
+# a.binaries = a.binaries - TOC([
+#    ('libxkbcommon-x11.so.0', None, None),
+# ])
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
     a.zipfiles,
-    a.datas,  
+    a.datas,
     [],
     name='QBRssManager',
     debug=False,
