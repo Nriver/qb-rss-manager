@@ -4,7 +4,6 @@ qBittorrent rss订阅 下载规则管理
 
 <a href="https://count.getloli.com"><img align="center" src="https://count.getloli.com/get/@Nriver_qb-rss-manager"></a><br>
 
-
 <!--ts-->
 
 * [qb-rss-manager](#qb-rss-manager)
@@ -18,7 +17,9 @@ qBittorrent rss订阅 下载规则管理
     * [提示](#提示)
 * [声明](#声明)
 * [关于图标](#关于图标)
-* [最后](#最后)
+* [Stargazers 数据](#stargazers-数据)
+* [捐赠](#捐赠)
+* [感谢](#感谢)
 
 <!--te-->
 
@@ -134,7 +135,34 @@ qb增强版主程序来自 https://github.com/c0re100/qBittorrent-Enhanced-Editi
 
 程序使用的图标为 [icon-icons.com](https://icon-icons.com/icon/qbittorrent/93768) 的免费图标
 
-# 最后
 
-感谢不愿留姓名的某位朋友的大力支持, 对整合版的诞生功不可没.
+---
+
+# Stargazers 数据
+
+统计图使用 [caarlos0/starcharts](https://github.com/caarlos0/starcharts) 项目生成.
+
+[![Stargazers over time](https://starchart.cc/Nriver/qb-rss-manager.svg)](https://starchart.cc/Nriver/qb-rss-manager)
+
+---
+
+# 捐赠
+
+如果你觉得我做的程序对你有帮助, 欢迎捐赠, 这对我来说是莫大的鼓励!
+
+支付宝:  
+![Alipay](docs/alipay.png)
+
+微信:  
+![Wechat Pay](docs/wechat_pay.png)
+
+---
+
+# 感谢
+
+感谢不愿留姓名的某位朋友的大力支持, 对本工具以及懒人包的诞生功不可没.
+
+感谢Jetbrins公司提供的Pycharm编辑器!
+
+[![Jetbrains](docs/jetbrains.svg)](https://jb.gg/OpenSource)
 
