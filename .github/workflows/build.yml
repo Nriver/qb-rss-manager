@@ -10,25 +10,25 @@ jobs:
   # 这里把release的url保存起来，方便后面自动上传打包好的文件
   createrelease:
     name: 发布版本
-    runs-on: [ubuntu-latest]
+    runs-on: [ ubuntu-latest ]
     steps:
-    - name: 创建发布
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: true
-        prerelease: false
-    - name: 输出发布地址到文件
-      run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
-    - name: 保存发布地址
-      uses: actions/upload-artifact@v3
-      with:
-        name: release_url
-        path: release_url.txt
+      - name: 创建发布
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: false
+      - name: 输出发布地址到文件
+        run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
+      - name: 保存发布地址
+        uses: actions/upload-artifact@v3
+        with:
+          name: release_url
+          path: release_url.txt
 
   # 编译
   build:
@@ -40,20 +40,20 @@ jobs:
         # 这里可以针对三大系统进行编译，很方便就能实现跨平台编译
         # mac要打出app包需要特殊处理，否则就是普通的可执行文件
         include:
-          # macos还没测试
+          # macos 经过测试, 可以用可执行文件方式运行. 但是无法用.app包形式运行
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-                pyinstaller QBRssManager-mac.spec &&
-                cd dist/ &&
-                zip -r9 QBRssManager-mac.zip QBRssManager.app/
+              pyinstaller QBRssManager.spec &&
+              cd dist/ &&
+              zip -r9 QBRssManager-mac.zip QBRssManager
             OUT_FILE_NAME: QBRssManager-mac.zip
             ASSET_MIME: application/zip
           # windows测试可用
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: pyinstaller QBRssManager.spec &&
-                cd dist/
+              cd dist/
             OUT_FILE_NAME: QBRssManager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
           # linux环境加上qt环境后测试可用
@@ -68,49 +68,49 @@ jobs:
             ASSET_MIME: application/zip  # application/octet-stream
     # 这里是编译的步骤
     steps:
-    # 尝试增加qt环境 有效！
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        aqtversion: '==2.1.*'
-        version: '5.15.2'
-        host: 'linux'
-        target: 'desktop'
-        arch: 'gcc_64'
-    - uses: actions/checkout@v3
-    # 降低python版本 兼容win7
-    - name: 初始化 Python 3.8
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.8'
-        # 使用缓存 https://github.com/marketplace/actions/setup-python
-        # 把依赖缓存起来，下次可以直接使用
-        cache: 'pip'
-    - name: 安装依赖
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: 在 ${{matrix.TARGET}} 上用pyinstaller编译
-      run: ${{matrix.CMD_BUILD}}
-    - name: 从Release任务读取发布URL路径
-      uses: actions/download-artifact@v3
-      with:
-        name: release_url
-    - name: 获取发布文件名和上传URL路径
-      id: get_release_info
-      shell: bash
-      # 解决兼容问题 https://github.com/actions/download-artifact#compatibility-between-v1-and-v2v3
-      # v1的下载会自动建一个文件夹，v2和v3不会，所以可以直接cat同目录的文件
-      run: |
-        value=`cat release_url.txt`
-        echo ::set-output name=upload_url::$value
-    - name: 上传发布文件资源
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-        asset_path: ./dist/${{ matrix.OUT_FILE_NAME}}
-        asset_name: ${{ matrix.OUT_FILE_NAME}}
-        asset_content_type: ${{ matrix.ASSET_MIME}}
+      # 尝试增加qt环境 有效！
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          aqtversion: '==2.1.*'
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+      - uses: actions/checkout@v3
+      # 降低python版本 兼容win7
+      - name: 初始化 Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+          # 使用缓存 https://github.com/marketplace/actions/setup-python
+          # 把依赖缓存起来，下次可以直接使用
+          cache: 'pip'
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 在 ${{matrix.TARGET}} 上用pyinstaller编译
+        run: ${{matrix.CMD_BUILD}}
+      - name: 从Release任务读取发布URL路径
+        uses: actions/download-artifact@v3
+        with:
+          name: release_url
+      - name: 获取发布文件名和上传URL路径
+        id: get_release_info
+        shell: bash
+        # 解决兼容问题 https://github.com/actions/download-artifact#compatibility-between-v1-and-v2v3
+        # v1的下载会自动建一个文件夹，v2和v3不会，所以可以直接cat同目录的文件
+        run: |
+          value=`cat release_url.txt`
+          echo ::set-output name=upload_url::$value
+      - name: 上传发布文件资源
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          asset_path: ./dist/${{ matrix.OUT_FILE_NAME}}
+          asset_name: ${{ matrix.OUT_FILE_NAME}}
+          asset_content_type: ${{ matrix.ASSET_MIME}}
