@@ -7,10 +7,13 @@ from loguru import logger
 
 headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址', '种子类型']
 
+config = {}
+data_list = []
+
 
 def init_config():
-    config = {}
-    data_list = []
+    global config
+    global data_list
     try:
         with open('config.json', 'r', encoding='utf-8') as f:
             config = json.loads(f.read())
