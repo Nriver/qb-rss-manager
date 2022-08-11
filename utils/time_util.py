@@ -8,9 +8,10 @@ def try_convert_time(s, date_auto_zfill=1):
     2021.11
     2021-11
     2021/11
+    202201
     自动转换成 2021年11月
     """
-    res = re.match(r'^(\d{4})[.\-_\\/](\d{1,2})$', s)
+    res = re.match(r'^(\d{4})[.\-_\\/]{0,1}(\d{1,2})$', s)
     if res:
         year = str(res[1])
         month = str(res[2])
