@@ -414,34 +414,60 @@ class App(QWidget):
         save_config(g.config, g.data_list, update_data=False)
 
     def load_type_hints(self, row):
-        try:
-            self.tableWidget.type_hints = []
-            # 当前行feed路径数据
-            current_row_feed = g.data_list[row][6]
-            logger.info(f'current_row_feed {current_row_feed}')
-            # 读取qb feed json数据
-            feed_uid = None
-            with open(g.config['feeds_json_path'], 'r', encoding='utf-8') as f:
-                feeds_json = json.loads(f.read())
-                logger.info(f'feeds_json {feeds_json}')
-                for x in feeds_json:
-                    if current_row_feed == feeds_json[x]['url']:
-                        feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
-                        logger.info(f'feed_uid {feed_uid}')
-                        break
-            if feed_uid:
-                # 读取rss feed的标题 写入 type_hints 列表
+        # 输入过程中实时过滤数据
+        self.tableWidget.type_hints = []
+        # 当前行feed路径数据
+        current_row_feed = g.data_list[row][6]
+        logger.info(f'current_row_feed {current_row_feed}')
+
+        if g.config['use_qb_api'] == 1 and check_qb_port_open(g.config['qb_api_ip'], g.config['qb_api_port']):
+            # 使用qb的api读取feed
+            try:
+                qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
+                self.text_browser.append('通过api获取feed')
+                rss_feeds = qb_client.rss_items(include_feed_data=True)
                 article_titles = []
-                article_path = g.config['rss_article_folder'] + '/' + feed_uid + '.json'
-                with open(article_path, 'r', encoding='utf-8') as f:
-                    article = json.loads(f.read())
-                    for x in article:
-                        article_titles.append(x['title'])
+                for x in rss_feeds:
+                    if current_row_feed == rss_feeds[x]['url']:
+                        for article in rss_feeds[x]['articles']:
+                            article_titles.append(article['title'])
                 self.tableWidget.type_hints = article_titles
                 logger.info(self.tableWidget.type_hints)
                 return True
-        except Exception as e:
-            logger.info(f'exception {e}')
+
+            # except qbittorrentapi.LoginFailed as e:
+            #     self.text_browser.append('api登录失败')
+            #     self.text_browser.append(e)
+            except Exception as e:
+                logger.error(e)
+                self.text_browser.append('通过api连接qb失败')
+                self.text_browser.append(f'报错信息 {repr(e)}')
+        else:
+            # 读取本地feed文件
+            try:
+                # 读取qb feed json数据
+                feed_uid = None
+                with open(g.config['feeds_json_path'], 'r', encoding='utf-8') as f:
+                    feeds_json = json.loads(f.read())
+                    logger.info(f'feeds_json {feeds_json}')
+                    for x in feeds_json:
+                        if current_row_feed == feeds_json[x]['url']:
+                            feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
+                            logger.info(f'feed_uid {feed_uid}')
+                            break
+                if feed_uid:
+                    # 读取rss feed的标题 写入 type_hints 列表
+                    article_titles = []
+                    article_path = g.config['rss_article_folder'] + '/' + feed_uid + '.json'
+                    with open(article_path, 'r', encoding='utf-8') as f:
+                        article = json.loads(f.read())
+                        for x in article:
+                            article_titles.append(x['title'])
+                    self.tableWidget.type_hints = article_titles
+                    logger.info(self.tableWidget.type_hints)
+                    return True
+            except Exception as e:
+                logger.info(f'exception {e}')
         self.text_browser.setText('没找到RSS数据呀')
 
     def do_search(self):
