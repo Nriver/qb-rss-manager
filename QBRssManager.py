@@ -663,9 +663,13 @@ class App(QWidget):
                 qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
                 self.text_browser.append('通过api获取已有规则')
                 rss_rules = qb_client.rss_rules()
-            except qbittorrentapi.LoginFailed as e:
-                self.text_browser.append('api登录失败')
-                self.text_browser.append(e)
+            # except qbittorrentapi.LoginFailed as e:
+            #     self.text_browser.append('api登录失败')
+            #     self.text_browser.append(e)
+            except Exception as e:
+                logger.error(e)
+                self.text_browser.append('通过api连接qb失败')
+                self.text_browser.append(f'报错信息 {repr(e)}')
         else:
             self.text_browser.append('无法通过qb的api获取rss数据')
 
@@ -852,7 +856,6 @@ class App(QWidget):
                 self.text_browser.append(f'报错信息 {repr(e)}')
 
         else:
-
             # 不使用qb的api, 需要重启qb
             # 不使用qb的api暂时不方便添加feed
             output_data = {}
