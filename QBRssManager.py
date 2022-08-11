@@ -18,6 +18,7 @@ from loguru import logger
 # 表头
 from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
+from utils.config_util import save_config, clean_data_list, init_config, headers
 from utils.path_util import resource_path, format_path_by_system, format_path
 from utils.pyqt_util import catch_exceptions
 from utils.qb_util import check_qb_port_open
@@ -25,134 +26,7 @@ from utils.string_util import try_split_date_and_name, wildcard_match_check
 from utils.time_util import try_convert_time
 from utils.windows_util import refresh_tray
 
-headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址', '种子类型']
-
-# 配置
-config = {}
-
-
-def clean_data_list():
-    cleaned_data = []
-    for x in data_list:
-        if all(y == '' for y in x):
-            continue
-        cleaned_data.append(x)
-    return cleaned_data
-
-
-def save_config(update_data=True):
-    logger.info(f'保存配置 更新数据 {update_data}')
-    with open('config.json', 'w', encoding='utf-8') as f:
-        if update_data:
-            config['data_list'] = clean_data_list()
-        f.write(json.dumps(config, ensure_ascii=False, indent=4))
-
-
-try:
-    with open('config.json', 'r', encoding='utf-8') as f:
-        config = json.loads(f.read())
-        # 拷贝一份数据, 防止不需要更新的时候把配置更新了
-        data_list = config['data_list'][::]
-        if 'auto_save' not in config:
-            config['auto_save'] = 0
-        if 'max_row_size' not in config:
-            config['max_row_size'] = 100
-        try:
-            # 修正旧数据, 临时使用, 之后要删除
-            if len(config['data_list'][0]) == 6:
-                data_list_fix = []
-                for x in config['data_list']:
-                    row = x[:4] + ['', ] + x[4:]
-                    data_list_fix.append(row)
-                data_list = data_list_fix
-                config['data_list'] = data_list[::]
-            if len(config['data_list'][0]) == 7:
-                data_list_fix = []
-                for x in config['data_list']:
-                    row = x[::] + ['', ]
-                    data_list_fix.append(row)
-                data_list = data_list_fix
-                config['data_list'] = data_list[::]
-                config['column_width_list'] = config['column_width_list'] + [80, ]
-        except:
-            pass
-
-        if 'full_window_width' not in config:
-            config['full_window_width'] = 1400
-        if 'full_window_height' not in config:
-            config['full_window_height'] = 800
-        if 'column_width_list' not in config:
-            column_width_list = [80, 260, 210, 65, 62, 370, 290, 80]
-            config['column_width_list'] = column_width_list
-        if 'center_columns' not in config:
-            config['center_columns'] = [0, 3, 4]
-        if 'close_to_tray' not in config:
-            config['close_to_tray'] = 1
-        if 'date_auto_zfill' not in config:
-            config['date_auto_zfill'] = 0
-        if 'feeds_json_path' not in config:
-            config['feeds_json_path'] = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
-        if 'rss_article_folder' not in config:
-            config['rss_article_folder'] = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
-        if 'use_qb_api' not in config:
-            config['use_qb_api'] = 1
-        if 'qb_api_ip' not in config:
-            config['qb_api_ip'] = '127.0.0.1'
-        if 'qb_api_port' not in config:
-            config['qb_api_port'] = 38080
-        if 'qb_api_username' not in config:
-            config['qb_api_username'] = ''
-        if 'qb_api_password' not in config:
-            config['qb_api_password'] = ''
-        if 'text_browser_height' in config:
-            del config['text_browser_height']
-except:
-
-    # 默认配置
-    # rules_path = r'E:\soft\bt\qBittorrent\profile\qBittorrent\config\rss\download_rules.json'
-    if os.name == 'nt':
-        # Windows 系统默认配置
-        # qb主程序路径
-        # qb_executable = r'E:\soft\bt\qBittorrent\qbittorrent_x64.exe'
-        qb_executable = os.path.expandvars(r'%ProgramW6432%\qBittorrent\qbittorrent.exe')
-        # qb配置文件路径
-        rules_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\download_rules.json')
-        feeds_json_path = os.path.expandvars(r'%appdata%\qBittorrent\rss\feeds.json')
-        rss_article_folder = os.path.expandvars(r'%LOCALAPPDATA%\qBittorrent\rss\articles')
-    else:
-        # Linux 桌面系统默认配置
-        qb_executable = os.path.expanduser(r'qbittorrent')
-        rules_path = os.path.expanduser(r'~/.config/qBittorrent/rss/download_rules.json')
-        feeds_json_path = os.path.expanduser(r'~/.config/qBittorrent/rss/feeds.json')
-        rss_article_folder = os.path.expanduser(r'~/.config/qBittorrent/rss/articles')
-
-    # 保存后打开qb主程序 1为自动打开 其它值不自动打开
-    open_qb_after_export = 1
-
-    data_list = [
-    ]
-    # 自动保存
-    auto_save = 0
-    max_row_size = 100
-    config['rules_path'] = rules_path
-    config['open_qb_after_export'] = open_qb_after_export
-    config['qb_executable'] = qb_executable
-    config['data_list'] = data_list
-    config['auto_save'] = auto_save
-    config['max_row_size'] = max_row_size
-    config['date_auto_zfill'] = 0
-    config['feeds_json_path'] = feeds_json_path
-    config['rss_article_folder'] = rss_article_folder
-
-    with open('config.json', 'w', encoding='utf-8') as f:
-        f.write(json.dumps(config, ensure_ascii=False, indent=4))
-    # 生成配置直接退出
-    sys.exit()
-
-# 补到 max_row_size 个数据
-if len(data_list) < config['max_row_size']:
-    for _ in range(config['max_row_size'] - len(data_list)):
-        data_list.append(['' for x in range(len(headers))])
+config, data_list = init_config()
 
 # 初始化qb_api客户端
 if config['use_qb_api']:
@@ -160,8 +34,6 @@ if config['use_qb_api']:
         host=config['qb_api_ip'],
         port=config['qb_api_port'],
     )
-
-qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
 
 
 class CustomEditor(QtWidgets.QLineEdit):
@@ -356,7 +228,7 @@ class App(QWidget):
         logger.info(f"custom_resize_event {self.height, self.tableWidget.height(), self.text_browser.height()}")
         logger.info(f"splitter_state {self.splitter.saveState()}")
         config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
-        save_config(update_data=False)
+        save_config(config, data_list, update_data=False)
 
     def createButton(self):
         self.output_button = QPushButton('生成RSS订阅下载规则', self)
@@ -538,7 +410,7 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         logger.info(column_width_list_tmp)
         config['column_width_list'] = column_width_list_tmp
-        save_config(update_data=False)
+        save_config(config, data_list, update_data=False)
 
     def load_type_hints(self, row):
         try:
@@ -649,7 +521,7 @@ class App(QWidget):
         pat = re.compile(re.escape(source_text), re.IGNORECASE)
 
         self.tableWidget.blockSignals(True)
-        data_list = clean_data_list()
+        data_list = clean_data_list(data_list)
         # 长度补充
         if len(data_list) < config['max_row_size']:
             for _ in range(config['max_row_size'] - len(data_list)):
@@ -725,7 +597,7 @@ class App(QWidget):
 
         self.tableWidget.setCurrentCell(r - 1, c)
         if config['auto_save']:
-            save_config()
+            save_config(config, data_list)
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -752,7 +624,7 @@ class App(QWidget):
 
         self.tableWidget.setCurrentCell(r + 1, c)
         if config['auto_save']:
-            save_config()
+            save_config(config, data_list)
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -773,7 +645,7 @@ class App(QWidget):
         data_list[r][c] = text
         logger.info(f'on_cell_changed 结果 {data_list}')
         if config['auto_save']:
-            save_config()
+            save_config(config, data_list)
 
         # 记录数据修改的时间作为简易版本号, 用来标记搜索结果是否要更新
         self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
@@ -811,7 +683,7 @@ class App(QWidget):
 
         # 对比表格内已有数据
         exist_data = {}
-        for x in clean_data_list():
+        for x in clean_data_list(data_list):
             item = {
                 "enabled": True,
                 "mustContain": x[2],
@@ -850,7 +722,7 @@ class App(QWidget):
 
         # 添加新数据 刷新表格
         self.tableWidget.blockSignals(True)
-        data_list = clean_data_list()
+        data_list = clean_data_list(data_list)
         for x in new_rules:
             d = rss_rules[x]
 
@@ -898,7 +770,7 @@ class App(QWidget):
         with open(share_file_path, 'r', encoding='utf-8') as f:
             share_data = json.loads(f.read())
             # 对比表格内已有数据
-            data_list = clean_data_list()
+            data_list = clean_data_list(data_list)
             for x in share_data:
                 if x in data_list:
                     continue
@@ -931,10 +803,11 @@ class App(QWidget):
             # 没有选择文件时的异常处理
             return
         with open(share_file_path, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(clean_data_list(), ensure_ascii=False, indent=4))
+            f.write(json.dumps(clean_data_list(data_list), ensure_ascii=False, indent=4))
 
     @pyqtSlot()
     def on_export_click(self):
+        global data_list
         logger.info('生成qb订阅规则')
 
         # 尝试通过api和qb通信
@@ -950,7 +823,7 @@ class App(QWidget):
             for x in rss_rules:
                 qb_client.rss_remove_rule(x)
             # 添加新规则
-            for x in clean_data_list():
+            for x in clean_data_list(data_list):
                 qb_client.rss_set_rule(
                     rule_name=x[0] + ' ' + x[1],
                     rule_def={
@@ -967,7 +840,7 @@ class App(QWidget):
         else:
             # 不使用qb的api, 需要重启qb
             output_data = {}
-            for x in clean_data_list():
+            for x in clean_data_list(data_list):
                 logger.info(x)
                 item = {
                     "enabled": True,
@@ -985,10 +858,12 @@ class App(QWidget):
             logger.info(config['open_qb_after_export'])
             if config['open_qb_after_export']:
                 # 关闭qb
-                try:
-                    os.system(f'taskkill /f /im {qb_executable_name}')
-                except:
-                    pass
+                if os.name == 'nt':
+                    try:
+                        qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
+                        os.system(f'taskkill /f /im {qb_executable_name}')
+                    except:
+                        pass
                 # 启动qb
                 subprocess.Popen([config['qb_executable']])
                 if os.name == 'nt':
@@ -1024,7 +899,7 @@ class App(QWidget):
         for i in range(len(headers)):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         config['column_width_list'] = column_width_list_tmp
-        save_config()
+        save_config(config, data_list)
         self.show_message("保存成功", "不错不错")
 
     @pyqtSlot()
@@ -1032,7 +907,7 @@ class App(QWidget):
         global data_list
         # 防止触发 cellChange 事件导致重复更新
         self.tableWidget.blockSignals(True)
-        data_list = clean_data_list()
+        data_list = clean_data_list(data_list)
         # 长度补充
         if len(data_list) < config['max_row_size']:
             for _ in range(config['max_row_size'] - len(data_list)):
@@ -1051,7 +926,7 @@ class App(QWidget):
     def on_backup_click(self):
         """备份配置"""
         # 先保存再备份
-        save_config()
+        save_config(config, data_list)
         logger.info('备份')
         backup_file_name = f'config_{datetime.now()}.json'
         logger.info(backup_file_name)
@@ -1151,7 +1026,7 @@ class App(QWidget):
                         logger.info(f'粘贴结果 {data_list}')
                     # 保存结果
                     if config['auto_save']:
-                        save_config()
+                        save_config(config, data_list)
                 # app.clipboard().setText('')
                 self.tableWidget.blockSignals(False)
                 return
@@ -1177,7 +1052,7 @@ class App(QWidget):
                     logger.info(f'粘贴结果 {data_list}')
                 # 保存结果
                 if config['auto_save']:
-                    save_config()
+                    save_config(config, data_list)
                 self.tableWidget.blockSignals(False)
 
         # 搜索
@@ -1210,7 +1085,7 @@ class App(QWidget):
                 self.tableWidget.setItem(r, c, QTableWidgetItem(""))
                 data_list[r][c] = ""
             if config['auto_save']:
-                save_config()
+                save_config(config, data_list)
             self.tableWidget.blockSignals(False)
 
         # 方向键
@@ -1256,7 +1131,7 @@ class App(QWidget):
                     logger.info(f'粘贴结果 {data_list}')
                 # 保存结果
                 if config['auto_save']:
-                    save_config()
+                    save_config(config, data_list)
             self.tableWidget.blockSignals(False)
         elif event.key() in (Qt.Key_F3,):
             self.do_search()
@@ -1303,7 +1178,7 @@ class App(QWidget):
         logger.info("Window has been resized")
         config['full_window_width'] = self.normalGeometry().width()
         config['full_window_height'] = self.normalGeometry().height()
-        save_config(update_data=False)
+        save_config(config, data_list, update_data=False)
 
     def closeEvent(self, event):
         # 主窗口的关闭按钮事件
