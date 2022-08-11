@@ -810,6 +810,17 @@ class App(QWidget):
             # 使用qb的api, 可以不重启qb
             try:
                 qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
+                # 要先加feed
+                rss_feeds = qb_client.rss_items()
+                rss_urls = [rss_feeds[x]['url'] for x in rss_feeds]
+
+                for x in clean_data_list(g.data_list):
+                    feed_url = x[6]
+                    if feed_url not in rss_urls:
+                        # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
+                        qb_client.rss_add_feed(feed_url, feed_url)
+                        rss_urls.append(feed_url)
+
                 # 清空已有规则
                 rss_rules = qb_client.rss_rules()
                 for x in rss_rules:
@@ -843,6 +854,7 @@ class App(QWidget):
         else:
 
             # 不使用qb的api, 需要重启qb
+            # 不使用qb的api暂时不方便添加feed
             output_data = {}
             for x in clean_data_list(g.data_list):
                 logger.info(x)
