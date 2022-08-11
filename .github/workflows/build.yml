@@ -1,4 +1,4 @@
-name: Build
+name: 跨平台编译qb-rss-manager
 
 on:
   push:
