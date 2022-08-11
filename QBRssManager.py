@@ -810,29 +810,38 @@ class App(QWidget):
             # 使用qb的api, 可以不重启qb
             try:
                 qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
-            except qbittorrentapi.LoginFailed as e:
-                logger.error(e)
+                # 清空已有规则
+                rss_rules = qb_client.rss_rules()
+                for x in rss_rules:
+                    qb_client.rss_remove_rule(x)
+                # 添加新规则
+                for x in clean_data_list(g.data_list):
+                    qb_client.rss_set_rule(
+                        rule_name=x[0] + ' ' + x[1],
+                        rule_def={
+                            "enabled": True,
+                            "mustContain": x[2],
+                            "mustNotContain": x[3],
+                            "savePath": format_path_by_system(x[5]),
+                            "affectedFeeds": [x[6], ],
+                            "assignedCategory": x[7]
+                        }
+                    )
+                # api通信不需要执行qb的exe
+                # subprocess.Popen([g.config['qb_executable']])
 
-            # 清空已有规则
-            rss_rules = qb_client.rss_rules()
-            for x in rss_rules:
-                qb_client.rss_remove_rule(x)
-            # 添加新规则
-            for x in clean_data_list(g.data_list):
-                qb_client.rss_set_rule(
-                    rule_name=x[0] + ' ' + x[1],
-                    rule_def={
-                        "enabled": True,
-                        "mustContain": x[2],
-                        "mustNotContain": x[3],
-                        "savePath": format_path_by_system(x[5]),
-                        "affectedFeeds": [x[6], ],
-                        "assignedCategory": x[7]
-                    }
-                )
-            # api通信不需要执行qb的exe
-            # subprocess.Popen([g.config['qb_executable']])
+                # 如果api执行成功 就可以直接返回了
+                return
+
+            # except qbittorrentapi.LoginFailed as e:
+            #     logger.error(e)
+            except Exception as e:
+                logger.error(e)
+                self.text_browser.append('通过api连接qb失败')
+                self.text_browser.append(f'报错信息 {repr(e)}')
+
         else:
+
             # 不使用qb的api, 需要重启qb
             output_data = {}
             for x in clean_data_list(g.data_list):
