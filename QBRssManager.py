@@ -1,8 +1,6 @@
-import fnmatch
 import json
 import os
 import re
-import socket
 import subprocess
 import sys
 import time
@@ -10,16 +8,23 @@ from datetime import datetime
 from zipfile import ZipFile
 
 import qbittorrentapi
-
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSystemTrayIcon, QTextBrowser, QSplitter, \
-    QTabWidget, QLineEdit, QFileDialog
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QTextBrowser, QSplitter, \
+    QFileDialog
 from loguru import logger
 
-
 # 表头
+from ui.search_window import SearchWindow
+from ui.tray_icon import TrayIcon
+from utils.path_util import resource_path, format_path_by_system, format_path
+from utils.pyqt_util import catch_exceptions
+from utils.qb_util import check_qb_port_open
+from utils.string_util import try_split_date_and_name, wildcard_match_check
+from utils.time_util import try_convert_time
+from utils.windows_util import refresh_tray
+
 headers = ['播出时间', '剧集名称', '包含关键字', '排除关键字', '集数修正', '保存路径', 'RSS订阅地址', '种子类型']
 
 # 配置
@@ -121,7 +126,6 @@ except:
         feeds_json_path = os.path.expanduser(r'~/.config/qBittorrent/rss/feeds.json')
         rss_article_folder = os.path.expanduser(r'~/.config/qBittorrent/rss/articles')
 
-
     # 保存后打开qb主程序 1为自动打开 其它值不自动打开
     open_qb_after_export = 1
 
@@ -156,107 +160,6 @@ if config['use_qb_api']:
         host=config['qb_api_ip'],
         port=config['qb_api_port'],
     )
-
-
-def format_path(s):
-    return s.replace('\\', '/').replace('//', '/')
-
-
-def format_path_by_system(s):
-    # 保存路径格式化 兼容linux路径
-    # 由于有远程调用api的需求, 所以这里不能限制斜杠格式
-    # 简单判断一下吧
-    if not s:
-        return ''
-    if s[0] != '/':
-        return format_path(s).replace('/', '\\')
-    else:
-        return format_path(s)
-
-
-def try_convert_time(s):
-    """
-    简单粗暴的字符串转换年月
-    比如 2021.11 2021-11 2021/11 转换成2021年11月
-    """
-    res = re.match(r'^(\d{4})[.\-_\\/](\d{1,2})$', s)
-    if res:
-        year = str(res[1])
-        month = str(res[2])
-
-        if config['date_auto_zfill'] == 1:
-            month = month.zfill(2)
-        s = f'{year}年{month}月'
-    return s
-
-
-def wildcard_match_check(s, keywords_groups_string):
-    # 多组关键字用 | 隔开
-    # 单组关键字内 多个条件用空格隔开
-    # 支持通配符匹配
-
-    # logger.info(f'测试字符 {s}')
-    # logger.info(f'匹配关键字 {keywords_groups_string}')
-
-    # 关键字分割，不对 \| 进行分割
-    # https://stackoverflow.com/questions/18092354/python-split-string-without-splitting-escaped-character
-    keywords_groups = re.split(r'(?<!\\)\|', keywords_groups_string)
-
-    # logger.info(f'关键字分组 {keywords_groups}')
-
-    group_results = []
-    for keywords in keywords_groups:
-        # 防止空格造成空匹配
-        keywords = keywords.strip()
-        if not keywords:
-            continue
-
-        # 单组关键字必须全部满足
-        match_list = []
-        for keyword in keywords.split():
-            # logger.info(keyword)
-            # 防止空格造成空匹配
-            keyword = keyword.strip()
-            if not keyword:
-                continue
-            # 关键字匹配
-            if keyword.lower() in s.lower():
-                match_list.append(True)
-                continue
-            # 通配符匹配
-            if fnmatch.fnmatch(s.lower(), keyword.lower()):
-                match_list.append(True)
-                continue
-            match_list.append(False)
-
-        group_results.append(all(match_list))
-
-    return any(group_results)
-
-
-def try_split_date_and_name(s):
-    if not s or ' ' not in s:
-        return '', s
-    tmp_date, tmp_name = s.split(' ', 1)
-    pat = '^\d{4}年\d{1,2}月$'
-    res = re.match(pat, tmp_date)
-    if res:
-        return res[0], tmp_name
-    return '', s
-
-
-def check_qb_port_open():
-    # 检查端口可用性
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    location = (config['qb_api_ip'], int(config['qb_api_port']))
-    result_of_check = a_socket.connect_ex(location)
-    if result_of_check == 0:
-        logger.info('qb端口可用')
-        return True
-    else:
-        logger.info('qb端口不可用')
-        return False
-
 
 qb_executable_name = format_path(config['qb_executable']).rsplit('/', 1)[-1]
 
@@ -354,104 +257,11 @@ class CustomQTextBrowser(QTextBrowser):
                 self.parent_app.text_browser.append('暂时没有找到相关的feed')
 
 
-class SearchWindow(QWidget):
-
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        # 记录上一次搜索的关键字 用于多个搜索结果跳转
-        self.last_search_keyword = ''
-        # 记录上一次搜索的结果位置
-        self.last_search_index = 0
-        # 检查数据是否有更新, 如果有更新, 需要重新搜索
-        self.last_data_update_timestamp = None
-        self.search_result = []
-
-        self.current_tab = 0
-        self.last_tab = 0
-
-        self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
-
-        self.tabs = QTabWidget()
-        # self.tabs.resize(300, 200)
-
-        # 搜索tab
-        self.lineEdit = QLineEdit()
-        self.lineEdit.setPlaceholderText('输入搜索关键字...')
-        do_search_button = QPushButton("搜索")
-        do_search_button.clicked.connect(self.parent.do_search)
-        tab = QWidget()
-        tab.layout = QVBoxLayout(self)
-        tab.layout.addWidget(self.lineEdit)
-        tab.layout.addWidget(do_search_button)
-        tab.setLayout(tab.layout)
-        self.tabs.addTab(tab, "搜索")
-
-        # 替换tab
-        self.lineEditReplaceSource = QLineEdit()
-        self.lineEditReplaceSource.setPlaceholderText('输入搜索关键字...')
-        self.lineEditReplaceTarget = QLineEdit()
-        self.lineEditReplaceTarget.setPlaceholderText('替换为...')
-        do_search_button2 = QPushButton("搜索")
-        do_search_button2.clicked.connect(self.parent.do_search)
-        do_replace_button = QPushButton("替换")
-        do_replace_button.clicked.connect(self.parent.do_replace)
-        do_replace_all_button = QPushButton("全部替换")
-        do_replace_all_button.clicked.connect(self.parent.do_replace_all)
-        tab = QWidget()
-        tab.layout = QVBoxLayout(self)
-        tab.layout.addWidget(self.lineEditReplaceSource)
-        tab.layout.addWidget(self.lineEditReplaceTarget)
-        tab.layout.addWidget(do_search_button2)
-        tab.layout.addWidget(do_replace_button)
-        tab.layout.addWidget(do_replace_all_button)
-        tab.setLayout(tab.layout)
-        self.tabs.addTab(tab, "替换")
-
-        # 绑定tab切换事件
-        self.tabs.currentChanged.connect(self.parent.search_tab_change)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.tabs)
-        self.setLayout(layout)
-
-        # 这个是搜索输入框 切换tab时跟据index把之前的数据带过来覆盖
-        self.text_edit_list = [self.lineEdit, self.lineEditReplaceSource]
-
-        self.setWindowTitle("搜索和替换")
-
-        flags = Qt.WindowFlags()
-        # 窗口永远在最前面
-        flags |= Qt.WindowStaysOnTopHint
-        self.setWindowFlags(flags)
-
-        # 按键绑定
-        self.keyPressEvent = self.handle_key_press
-
-        self.resize(250, 100)
-
-    def closeEvent(self, event):
-        # 搜索窗口的关闭按钮事件
-        logger.info('关闭搜索窗口')
-        self.parent.text_browser.clear()
-
-    def handle_key_press(self, event):
-        if event.key() in (Qt.Key_Enter, Qt.Key_Return):
-            logger.info('搜索')
-            self.parent.do_search()
-        elif event.key() in (Qt.Key_Escape,):
-            self.close()
-        elif event.key() == Qt.Key_F and (event.modifiers() & Qt.ControlModifier):
-            self.tabs.setCurrentIndex(0)
-        elif event.key() == Qt.Key_H and (event.modifiers() & Qt.ControlModifier):
-            self.tabs.setCurrentIndex(1)
-
-
 class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.2.1 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.2.2 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -956,7 +766,7 @@ class App(QWidget):
 
         # 第一列时间进行特殊转换处理
         if c == 0:
-            text = try_convert_time(text)
+            text = try_convert_time(text, config['date_auto_zfill'])
             self.tableWidget.currentItem().setText(text)
 
         # 修改数据
@@ -977,7 +787,7 @@ class App(QWidget):
         rss_rules = []
 
         self.text_browser.append('尝试通过api和qb通信')
-        if config['use_qb_api'] == 1 and check_qb_port_open():
+        if config['use_qb_api'] == 1 and check_qb_port_open(config['qb_api_ip'], config['qb_api_port']):
             # 使用qb的api, 可以不重启qb
             try:
                 qb_client.auth_log_in(username=config['qb_api_username'], password=config['qb_api_password'])
@@ -1112,7 +922,9 @@ class App(QWidget):
         global data_list
         logger.info('导出规则到文件进行分享')
         # 这里用完整路径可以设置默认名称
-        file_info = QFileDialog.getSaveFileName(self, "选择输出目录文件", os.path.join(resource_path('.'), 'rss订阅规则分享.json'), "json 文件(*.json)")
+        file_info = QFileDialog.getSaveFileName(self, "选择输出目录文件",
+                                                os.path.join(resource_path('.'), 'rss订阅规则分享.json'),
+                                                "json 文件(*.json)")
         share_file_path = file_info[0]
         logger.info(f'导出文件 {share_file_path}')
         if not share_file_path:
@@ -1126,7 +938,7 @@ class App(QWidget):
         logger.info('生成qb订阅规则')
 
         # 尝试通过api和qb通信
-        if config['use_qb_api'] == 1 and check_qb_port_open():
+        if config['use_qb_api'] == 1 and check_qb_port_open(config['qb_api_ip'], config['qb_api_port']):
             # 使用qb的api, 可以不重启qb
             try:
                 qb_client.auth_log_in(username=config['qb_api_username'], password=config['qb_api_password'])
@@ -1504,85 +1316,6 @@ class App(QWidget):
             sys.exit()
 
 
-class TrayIcon(QSystemTrayIcon):
-
-    def __init__(self, parent=None):
-        super(TrayIcon, self).__init__(parent)
-        self.showMenu()
-        self.activated.connect(self.iconClicked)
-        self.setIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
-
-    def showMenu(self):
-        self.menu = QMenu()
-
-        self.showWindowAction = QAction("显示程序窗口", self, triggered=self.show_main_window)
-        self.quitAction = QAction("退出", self, triggered=self.quit)
-
-        self.menu.addAction(self.showWindowAction)
-        self.menu.addAction(self.quitAction)
-
-        self.setContextMenu(self.menu)
-
-    def iconClicked(self, reason):
-        # 1是表示单击右键
-        # 2是双击
-        # 3是单击左键
-        # 4是用鼠标中键点击
-        if reason in (2, 3, 4):
-            pw = self.parent()
-            if pw.isVisible():
-                pw.hide()
-            else:
-                pw.show()
-        logger.info(reason)
-
-    def show_main_window(self):
-        self.parent().setWindowState(QtCore.Qt.WindowActive)
-        self.parent().show()
-
-    def quit(self):
-        # 退出程序
-        self.setVisible(False)
-        sys.exit()
-
-
-def refresh_tray():
-    import win32gui
-    from win32con import WM_MOUSEMOVE
-    logger.info('刷新任务栏托盘图标')
-    # 刷新任务栏托盘图标, 去掉强制关闭进程后的残留图标
-    hShellTrayWnd = win32gui.FindWindow("Shell_trayWnd", "")
-    hTrayNotifyWnd = win32gui.FindWindowEx(hShellTrayWnd, 0, "TrayNotifyWnd", None)
-    hSysPager = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'SysPager', None)
-    if hSysPager:
-        hToolbarWindow32 = win32gui.FindWindowEx(hSysPager, 0, 'ToolbarWindow32', None)
-    else:
-        hToolbarWindow32 = win32gui.FindWindowEx(hTrayNotifyWnd, 0, 'ToolbarWindow32', None)
-    logger.info(f'hToolbarWindow32 {hToolbarWindow32}')
-    if hToolbarWindow32:
-        rect = win32gui.GetWindowRect(hToolbarWindow32)
-        logger.info(rect)
-        # 窗口宽度 // 图标宽度 = 图标个数?
-        for x in range((rect[2] - rect[0]) // 24):
-            win32gui.SendMessage(hToolbarWindow32, WM_MOUSEMOVE, 0, 1)
-
-
-def resource_path(relative_path):
-    # 兼容pyinstaller的文件资源访问
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath('.'), relative_path)
-
-
-# 获取pyqt5的exception
-def catch_exceptions(t, val, tb):
-    QtWidgets.QMessageBox.critical(None,
-                                   "An exception was raised",
-                                   "Exception type: {}".format(t))
-    old_hook(t, val, tb)
-
-
-old_hook = sys.excepthook
 sys.excepthook = catch_exceptions
 
 if __name__ == '__main__':
