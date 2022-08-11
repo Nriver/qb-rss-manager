@@ -34,6 +34,7 @@ if g.config['use_qb_api']:
     qb_client = qbittorrentapi.Client(
         host=g.config['qb_api_ip'],
         port=g.config['qb_api_port'],
+        VERIFY_WEBUI_CERTIFICATE=False,
     )
 
 
