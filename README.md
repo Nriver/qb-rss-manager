@@ -49,7 +49,7 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 
 参数说明
 `use_qb_api` 启用api通信
-`qb_api_ip` qb的ip地址
+`qb_api_ip` qb的ip地址,若填写域名，请附上“http://”
 `qb_api_port` qb的端口
 `qb_api_username` qb的用户名
 `qb_api_password` qb的密码
