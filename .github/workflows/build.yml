@@ -57,7 +57,8 @@ jobs:
             OUT_FILE_NAME: QBRssManager.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
           # linux环境加上qt环境后测试可用
-          - os: ubuntu-latest
+          # 这里要用22.04的系统，不要用latest，latest对应的是20.04的旧系统。。。打出来的包会有问题
+          - os: ubuntu-22.04
             TARGET: linux
             SHELL: bash
             CMD_BUILD: |
@@ -78,11 +79,11 @@ jobs:
           target: 'desktop'
           arch: 'gcc_64'
       - uses: actions/checkout@v3
-      # python版本固定为3.10 确保新系统可用
-      - name: 初始化 Python 3.10
+      # python版本固定为3.7 可以兼容win7
+      - name: 初始化 Python 3.7
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.7'
           # 使用缓存 https://github.com/marketplace/actions/setup-python
           # 把依赖缓存起来，下次可以直接使用
           cache: 'pip'
