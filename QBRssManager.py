@@ -862,7 +862,11 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         g.config['column_width_list'] = column_width_list_tmp
         save_config()
-        self.show_message("保存成功", "不错不错")
+        # 不使用弹窗了，点击太麻烦
+        # self.show_message("保存成功", "不错不错")
+        # 提示信息
+        self.text_browser.clear()
+        self.text_browser.append(f'保存成功!')
 
     @pyqtSlot()
     def on_clean_row_click(self):
