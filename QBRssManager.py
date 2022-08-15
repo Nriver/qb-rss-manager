@@ -321,7 +321,7 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         logger.info(column_width_list_tmp)
         g.config['column_width_list'] = column_width_list_tmp
-        save_config(g.config, g.data_list, update_data=False)
+        save_config(update_data=False)
 
     def load_type_hints(self, row):
         # 输入过程中实时过滤数据
@@ -531,8 +531,12 @@ class App(QWidget):
             self.tableWidget.setItem(r - 1, i, item2)
 
         self.tableWidget.setCurrentCell(r - 1, c)
+
+        # 更新数据
+        g.update_data_list()
+
         if g.config['auto_save']:
-            save_config(g.config, g.data_list)
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -558,8 +562,12 @@ class App(QWidget):
             self.tableWidget.setItem(r + 1, i, item2)
 
         self.tableWidget.setCurrentCell(r + 1, c)
+
+        # 更新数据
+        g.update_data_list()
+
         if g.config['auto_save']:
-            save_config(g.config, g.data_list)
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -576,12 +584,12 @@ class App(QWidget):
             text = try_convert_time(text, g.config['date_auto_zfill'])
             self.tableWidget.currentItem().setText(text)
 
-        # 修改数据
+        # 更新数据
         g.update_data_list(text, r, c)
 
         logger.info(f'on_cell_changed 结果 {g.data_list}')
         if g.config['auto_save']:
-            save_config(g.config, g.data_list)
+            save_config()
 
         # 记录数据修改的时间作为简易版本号, 用来标记搜索结果是否要更新
         self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
@@ -879,7 +887,7 @@ class App(QWidget):
     def on_backup_click(self):
         """备份配置"""
         # 先保存再备份
-        save_config(g.config, g.data_list)
+        save_config()
         logger.info('备份')
         backup_file_name = f'config_{datetime.now()}.json'
         logger.info(backup_file_name)
@@ -977,9 +985,11 @@ class App(QWidget):
                         self.tableWidget.setItem(new_r, new_c, item)
                         g.data_list[new_r][new_c] = cell_data
                         logger.info(f'粘贴结果 {g.data_list}')
+                    # 更新数据
+                    g.update_data_list()
                     # 保存结果
                     if g.config['auto_save']:
-                        save_config(g.config, g.data_list)
+                        save_config()
                 # app.clipboard().setText('')
                 self.tableWidget.blockSignals(False)
                 return
@@ -1003,9 +1013,11 @@ class App(QWidget):
                     self.tableWidget.setItem(new_r, new_c, item)
                     g.data_list[new_r][new_c] = cell.data()
                     logger.info(f'粘贴结果 {g.data_list}')
+                # 更新数据
+                g.update_data_list()
                 # 保存结果
                 if g.config['auto_save']:
-                    save_config(g.config, g.data_list)
+                    save_config()
                 self.tableWidget.blockSignals(False)
 
         # 搜索
@@ -1037,8 +1049,10 @@ class App(QWidget):
                 c = x.column()
                 self.tableWidget.setItem(r, c, QTableWidgetItem(""))
                 g.data_list[r][c] = ""
+            # 更新数据
+            g.update_data_list()
             if g.config['auto_save']:
-                save_config(g.config, g.data_list)
+                save_config()
             self.tableWidget.blockSignals(False)
 
         # 方向键
@@ -1082,9 +1096,11 @@ class App(QWidget):
                     self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell_data))
                     g.data_list[new_r][new_c] = cell_data
                     logger.info(f'粘贴结果 {g.data_list}')
+                # 更新数据
+                g.update_data_list()
                 # 保存结果
                 if g.config['auto_save']:
-                    save_config(g.config, g.data_list)
+                    save_config()
             self.tableWidget.blockSignals(False)
         elif event.key() in (Qt.Key_F3,):
             self.do_search()
@@ -1110,7 +1126,11 @@ class App(QWidget):
             if cy in g.config['center_columns']:
                 item.setTextAlignment(Qt.AlignCenter)
             self.tableWidget.setItem(cx, cy, item)
-
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     def menu_delete_all_action(self):
@@ -1125,6 +1145,11 @@ class App(QWidget):
                 if cy in g.config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     def resizeEvent(self, event):

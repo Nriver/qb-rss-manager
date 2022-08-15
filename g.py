@@ -213,13 +213,15 @@ def dump_v1():
     return data_dump
 
 
-def update_data_list(text, r, c):
+def update_data_list(text=None, r=None, c=None):
+    """更新data_groups里的data_list数据到最新"""
     global config
     global data_list
     global data_groups
     global current_data_list_index
-    
-    data_list[r][c] = text
+
+    if text and r and c:
+        data_list[r][c] = text
     data_groups[current_data_list_index]['data'] = parse_v1_data_list(data_list)
 
 
