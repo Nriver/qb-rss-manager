@@ -153,6 +153,9 @@ def parse_v1():
     for x in data_groups[0]['data']:
         data_list.append(convert_v1_line(x))
 
+    # 补到 max_row_size 个数据
+    fill_up_data_list()
+
     return config, data_list
 
 
