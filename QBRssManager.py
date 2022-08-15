@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -138,7 +139,7 @@ class App(QWidget):
         logger.info(f"custom_resize_event {self.height, self.tableWidget.height(), self.text_browser.height()}")
         logger.info(f"splitter_state {self.splitter.saveState()}")
         g.config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
-        save_config(g.config, g.data_list, update_data=False)
+        save_config(update_data=False)
 
     def createButton(self):
         self.output_button = QPushButton('生成RSS订阅下载规则', self)
@@ -576,7 +577,8 @@ class App(QWidget):
             self.tableWidget.currentItem().setText(text)
 
         # 修改数据
-        g.data_list[r][c] = text
+        g.update_data_list(text, r, c)
+
         logger.info(f'on_cell_changed 结果 {g.data_list}')
         if g.config['auto_save']:
             save_config(g.config, g.data_list)
@@ -830,7 +832,7 @@ class App(QWidget):
         # 这里要覆盖变量
         with open('config.json', 'r', encoding='utf-8') as f:
             g.config = json.loads(f.read())
-            g.data_list = g.config['data_list'][::]
+            g.data_list = copy.deepcopy(g.config['data_list'])
             if len(g.data_list) < g.config['max_row_size']:
                 for _ in range(g.config['max_row_size'] - len(g.data_list)):
                     g.data_list.append(['' for x in range(len(headers))])
@@ -851,7 +853,7 @@ class App(QWidget):
         for i in range(len(headers)):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         g.config['column_width_list'] = column_width_list_tmp
-        save_config(g.config, g.data_list)
+        save_config()
         self.show_message("保存成功", "不错不错")
 
     @pyqtSlot()
@@ -1129,7 +1131,7 @@ class App(QWidget):
         logger.info("Window has been resized")
         g.config['full_window_width'] = self.normalGeometry().width()
         g.config['full_window_height'] = self.normalGeometry().height()
-        save_config(g.config, g.data_list, update_data=False)
+        save_config(update_data=False)
 
     def closeEvent(self, event):
         # 主窗口的关闭按钮事件
