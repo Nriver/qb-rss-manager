@@ -759,7 +759,14 @@ class App(QWidget):
             # 没有选择文件时的异常处理
             return
         with open(share_file_path, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(clean_data_list(g.data_list), ensure_ascii=False, indent=4))
+            # 旧版数据
+            # f.write(json.dumps(clean_data_list(g.data_list), ensure_ascii=False, indent=4))
+            # v1 结构数据
+            output_data = {
+                "version": "v1",
+                "data_groups": g.data_groups
+            }
+            f.write(json.dumps(output_data, ensure_ascii=False, indent=4))
 
     @pyqtSlot()
     def on_export_click(self):
