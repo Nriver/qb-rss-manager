@@ -584,8 +584,9 @@ class App(QWidget):
             text = try_convert_time(text, g.config['date_auto_zfill'])
             self.tableWidget.currentItem().setText(text)
 
+        g.data_list[r][c] = text
         # 更新数据
-        g.update_data_list(text, r, c)
+        g.update_data_list()
 
         logger.info(f'on_cell_changed 结果 {g.data_list}')
         if g.config['auto_save']:
@@ -839,7 +840,7 @@ class App(QWidget):
         self.tableWidget.blockSignals(True)
         # 这里要覆盖变量
         g.config, g.data_list = g.init_config()
-        
+
         # 重新渲染数据
         for cx, row in enumerate(g.data_list):
             for cy, d in enumerate(row):
