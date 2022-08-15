@@ -1,4 +1,4 @@
-import copy
+import json
 import json
 import os
 import re
@@ -838,19 +838,15 @@ class App(QWidget):
     def on_load_config_click(self):
         self.tableWidget.blockSignals(True)
         # 这里要覆盖变量
-        with open('config.json', 'r', encoding='utf-8') as f:
-            g.config = json.loads(f.read())
-            g.data_list = copy.deepcopy(g.config['data_list'])
-            if len(g.data_list) < g.config['max_row_size']:
-                for _ in range(g.config['max_row_size'] - len(g.data_list)):
-                    g.data_list.append(['' for x in range(len(headers))])
-            # 重新渲染数据
-            for cx, row in enumerate(g.data_list):
-                for cy, d in enumerate(row):
-                    item = QTableWidgetItem(d)
-                    if cy in g.config['center_columns']:
-                        item.setTextAlignment(Qt.AlignCenter)
-                    self.tableWidget.setItem(cx, cy, item)
+        g.config, g.data_list = g.init_config()
+        
+        # 重新渲染数据
+        for cx, row in enumerate(g.data_list):
+            for cy, d in enumerate(row):
+                item = QTableWidgetItem(d)
+                if cy in g.config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
