@@ -721,29 +721,46 @@ class App(QWidget):
 
         with open(share_file_path, 'r', encoding='utf-8') as f:
             share_data = json.loads(f.read())
-            # 对比表格内已有数据
-            g.data_list = clean_data_list(g.data_list)
-            for x in share_data:
-                if x in g.data_list:
-                    continue
-                g.data_list.append(x)
+            # 旧版数据兼容，以后准备删除
+            if 'version' not in share_data:
+                logger.info('导入旧版共享数据')
+                # 对比表格内已有数据
+                g.data_list = clean_data_list(g.data_list)
+                for x in share_data:
+                    if x in g.data_list:
+                        continue
+                    g.data_list.append(x)
+            elif share_data['version'] == 'v1':
+                logger.info('导入 v1 数据')
+                g.data_list = clean_data_list(g.data_list)
+                if 'data_group' in share_data:
+                    for x in share_data['data_group']['data']:
+                        line = g.convert_v1_line(x)
+                        if line in g.data_list:
+                            continue
+                        g.data_list.append(line)
+            else:
+                logger.info('未知格式的数据')
+                return
 
-        # 长度补充
-        if len(g.data_list) < g.config['max_row_size']:
-            for _ in range(g.config['max_row_size'] - len(g.data_list)):
-                g.data_list.append(['' for x in range(len(headers))])
-        # 更新整个列表
-        for cx, row in enumerate(g.data_list):
-            for cy, d in enumerate(row):
-                item = QTableWidgetItem(d)
-                if cy in g.config['center_columns']:
-                    item.setTextAlignment(Qt.AlignCenter)
-                self.tableWidget.setItem(cx, cy, item)
-        # 更新数据
-        g.update_data_list()
-        # 保存结果
-        if g.config['auto_save']:
-            save_config()
+            # 长度补充
+            if len(g.data_list) < g.config['max_row_size']:
+                for _ in range(g.config['max_row_size'] - len(g.data_list)):
+                    g.data_list.append(['' for x in range(len(headers))])
+            # 更新整个列表
+            for cx, row in enumerate(g.data_list):
+                for cy, d in enumerate(row):
+                    item = QTableWidgetItem(d)
+                    if cy in g.config['center_columns']:
+                        item.setTextAlignment(Qt.AlignCenter)
+                    self.tableWidget.setItem(cx, cy, item)
+
+            # 更新数据
+            g.update_data_list()
+            # 保存结果
+            if g.config['auto_save']:
+                save_config()
+
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -764,7 +781,10 @@ class App(QWidget):
             # v1 结构数据
             output_data = {
                 "version": "v1",
-                "data_groups": g.data_groups
+                "data_group": {
+                    'name': g.data_groups[g.current_data_list_index]['name'],
+                    'data': g.clean_group_data(g.data_groups[g.current_data_list_index]['data'])
+                }
             }
             f.write(json.dumps(output_data, ensure_ascii=False, indent=4))
 
