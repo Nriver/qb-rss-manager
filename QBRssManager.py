@@ -597,7 +597,7 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_import_exist_qb_rule_action(self):
-        logger.info('读取qb订阅规则')
+        logger.info('导入qb订阅规则')
 
         # 尝试通过api读取rss配置
         rss_rules = []
@@ -698,6 +698,11 @@ class App(QWidget):
                 if cy in g.config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -734,6 +739,11 @@ class App(QWidget):
                 if cy in g.config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
