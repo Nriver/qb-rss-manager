@@ -3,7 +3,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTabWidget, QLineEdit
 from loguru import logger
 
-# 表头
 from utils.path_util import resource_path
 
 

@@ -8,22 +8,23 @@ from datetime import datetime
 from zipfile import ZipFile
 
 import qbittorrentapi
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
-    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QTextBrowser, QSplitter, \
+    QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSplitter, \
     QFileDialog
 from loguru import logger
 
 import g
 from g import save_config, clean_data_list, headers
-# 表头
+from ui.custom_delegate import CustomDelegate
+from ui.custom_qtext_browser import CustomQTextBrowser
 from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path
 from utils.pyqt_util import catch_exceptions
 from utils.qb_util import check_qb_port_open
-from utils.string_util import try_split_date_and_name, wildcard_match_check
+from utils.string_util import try_split_date_and_name
 from utils.time_util import try_convert_time
 from utils.windows_util import refresh_tray
 
@@ -36,99 +37,6 @@ if g.config['use_qb_api']:
         port=g.config['qb_api_port'],
         VERIFY_WEBUI_CERTIFICATE=False,
     )
-
-
-class CustomEditor(QtWidgets.QLineEdit):
-    # 自定义一个 Editor
-    # 输入过程中的事件捕获在这里定义
-    # QLineEdit
-
-    def __init__(self, parent, index, parent_app):
-        super(CustomEditor, self).__init__(parent)
-        self.parent = parent
-        self.index = index
-        self.parent_app = parent_app
-        # 按键 事件
-        self.keyPressEvent = self.custom_keypress
-        # 输入法 不会触发keyPressEvent!
-        # 需要对inputMethodEvent单独处理
-        self.inputMethodEvent = self.custom_input_method_event
-
-    def custom_input_method_event(self, event):
-        # 自定义 输入法 事件处理
-        # PyQt5.QtGui.QInputMethodEvent
-        logger.info(f'customized IME {event}')
-        # 原始事件
-        super(CustomEditor, self).inputMethodEvent(event)
-        # 原始事件处理完才能得到最新的文本
-        self.process_text(self.text())
-
-    def custom_keypress(self, event):
-        # 自定义 按键 事件处理
-        logger.info('custom keypress')
-        # 原始事件
-        super(CustomEditor, self).keyPressEvent(event)
-        # 原始事件处理完才能得到最新的文本
-        self.process_text(self.text())
-
-    def process_text(self, text):
-        # 统一处理输入事件的文字
-        logger.info(f'process_text() {text}')
-        logger.info(f'self.index {self.index.row(), self.index.column()}')
-        g.data_list[self.index.row()][self.index.column()] = text
-        if self.index.column() in [2, 3]:
-            self.parent_app.text_browser.filter_type_hint()
-
-
-class CustomDelegate(QtWidgets.QStyledItemDelegate):
-    # 要对表格编辑进行特殊处理, 必须自己实现一个QStyledItemDelegate/QItemDelegate
-
-    def __init__(self, parent_app):
-        super().__init__(parent_app)
-        self.parent_app = parent_app
-
-    def createEditor(self, parent, option, index):
-        # 编辑器初始化
-        logger.info('createEditor()')
-        editor = CustomEditor(parent, index, self.parent_app)
-        return editor
-
-
-class CustomQTextBrowser(QTextBrowser):
-
-    def __init__(self, parent_app):
-        super().__init__(parent_app)
-        self.parent_app = parent_app
-
-    def filter_type_hint(self):
-        include_text = g.data_list[self.parent_app.tableWidget.currentItem().row()][2]
-        exclude_text = g.data_list[self.parent_app.tableWidget.currentItem().row()][3]
-        type_hints = self.parent_app.tableWidget.type_hints
-        # 清空
-        self.parent_app.text_browser.clear()
-        if include_text.strip() == '' and exclude_text.strip() == '':
-            # 特殊处理 为空则匹配所有
-            self.parent_app.text_browser.append('\n'.join(type_hints))
-        else:
-            # 保留匹配的
-            filtered_hints = []
-            for type_hint in type_hints:
-                # 包含关键字
-                flag1 = False
-                # 不包含关键字
-                flag2 = False
-                if include_text:
-                    # flag1 = all(x.lower() in type_hint.lower() for x in include_text.split(' '))
-                    flag1 = wildcard_match_check(type_hint, include_text)
-                if exclude_text:
-                    # flag2 = all(x.lower() in type_hint.lower() for x in exclude_text.split(' '))
-                    flag2 = wildcard_match_check(type_hint, exclude_text)
-                if flag1 and not flag2:
-                    filtered_hints.append(type_hint)
-            if filtered_hints:
-                self.parent_app.text_browser.append('\n'.join(filtered_hints))
-            else:
-                self.parent_app.text_browser.append('暂时没有找到相关的feed')
 
 
 class App(QWidget):
