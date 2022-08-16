@@ -97,6 +97,8 @@ def init_config():
         if 'data_list' in config:
             parse_legacy()
         elif 'data_dump' in config and config['data_dump']['version'] == 'v1':
+            # 从config里加载data groups数据，后面的操作不要直接操作config对象，直接操作data_groups
+            data_groups = config['data_dump']['data_groups']
             parse_v1()
         else:
             exit()
@@ -153,7 +155,6 @@ def parse_v1():
     global data_groups
     global current_data_list_index
 
-    data_groups = config['data_dump']['data_groups']
     data_list = []
     for x in data_groups[current_data_list_index]['data']:
         data_list.append(convert_v1_line(x))
