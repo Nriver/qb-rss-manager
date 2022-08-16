@@ -489,7 +489,7 @@ class App(QWidget):
         self.tableWidget.blockSignals(False)
 
     def show_message(self, message, title):
-        """弹出框消息"""
+        """弹出框 消息"""
         self.msg = QMessageBox()
         # 设置图标
         self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
@@ -500,6 +500,27 @@ class App(QWidget):
         # 标题
         self.msg.setWindowTitle(title)
         self.msg.show()
+
+    def show_yes_no_message(self, message, title, yes_message, no_message):
+        """
+        弹出框 确认是否执行
+        封装一个函数，方便自定义提示信息和按钮
+        """
+        self.msg = QMessageBox()
+        # 设置图标
+        self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+        # 只能通过设置样式来修改宽度, 其它设置没用
+        self.msg.setStyleSheet("QLabel {min-width: 80px;}")
+        # 提示信息
+        self.msg.setText(message)
+        # 标题
+        self.msg.setWindowTitle(title)
+        self.msg.addButton(QPushButton(yes_message), QMessageBox.YesRole)
+        self.msg.addButton(QPushButton(no_message), QMessageBox.RejectRole)
+        # self.msg.show()
+        # 这里返回0是yes, 1是no
+        res = int(self.msg.exec_())
+        return res
 
     @pyqtSlot()
     def on_double_click(self):
@@ -1216,6 +1237,16 @@ class App(QWidget):
     def menu_delete_all_action(self):
         # 右键菜单 删除所有订阅
         logger.info('删除所有订阅')
+
+        # 普通写法
+        # res = QMessageBox.question(self, '警告', '确认要删除所有订阅吗?', QMessageBox.Yes | QMessageBox.No)
+        # if res == QMessageBox.No:
+        #     return
+
+        res = self.show_yes_no_message('确认要删除所有订阅吗?', '警告', '是', '否')
+        if res != 0:
+            return
+
         self.tableWidget.blockSignals(True)
         for x in range(len(g.data_list)):
             g.data_list[x] = ['' for _ in range(len(headers))]
