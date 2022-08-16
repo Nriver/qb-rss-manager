@@ -143,10 +143,20 @@ def save_config(update_data=True):
     global current_data_list_index
 
     logger.info(f'保存配置 更新数据 {update_data}')
+
+    # 读取原始数据，以防异常报错丢失配置
+    with open('config.json', 'r', encoding='utf-8') as f:
+        original_content = f.read()
+
     with open('config.json', 'w', encoding='utf-8') as f:
-        if update_data:
-            config['data_dump'] = dump_v1()
-        f.write(json.dumps(config, ensure_ascii=False, indent=4))
+        try:
+            if update_data:
+                config['data_dump'] = dump_v1()
+            f.write(json.dumps(config, ensure_ascii=False, indent=4))
+        except:
+            logger.info('数据解析有问题! 还原数据!')
+            f.write(original_content)
+            return '数据解析有问题! 还原数据!'
 
 
 def parse_v1():
