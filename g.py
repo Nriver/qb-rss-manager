@@ -16,6 +16,11 @@ data_groups = []
 # 记录目前的data_list是第几组数据
 current_data_list_index = 0
 
+new_data_group = {
+    'name': '新分组',
+    'data': [],
+}
+
 
 def get_default_config():
     # 默认配置

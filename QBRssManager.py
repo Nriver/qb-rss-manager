@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -44,7 +45,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.2.3 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.2.4 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -97,13 +98,8 @@ class App(QWidget):
         self.layout_button.addWidget(self.backup_button)
         self.layout_button.addWidget(self.output_button)
 
-        # 无法共享widget 只好初始化多个widget了
         self.tab = QTabWidget()
-        # 自定义tabbar 方便修改
-        self.tab.setTabBar(CustomTabBar(self))
-        for i, x in enumerate(self.tableWidget_list):
-            self.tab.addTab(x, g.data_groups[i]['name'])
-        self.tab.currentChanged.connect(self.on_tab_changed)
+        self.createTabs()
 
         # 文本框 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
@@ -247,6 +243,14 @@ class App(QWidget):
         self.tableWidget.setItemDelegateForColumn(2, CustomDelegate(self))
         self.tableWidget.setItemDelegateForColumn(3, CustomDelegate(self))
 
+    def createTabs(self):
+        # 无法共享widget 只好初始化多个widget了
+        # 自定义tabbar 方便修改
+        self.tab.setTabBar(CustomTabBar(self))
+        for i, x in enumerate(self.tableWidget_list):
+            self.tab.addTab(x, g.data_groups[i]['name'])
+        self.tab.currentChanged.connect(self.on_tab_changed)
+
     def generateTextBrowserMenu(self, pos):
         """文本框自定义右键菜单"""
         time.sleep(0)
@@ -287,6 +291,8 @@ class App(QWidget):
         self.menu = QMenu(self)
         self.up_action = QAction("向上移动")
         self.down_action = QAction("向下移动")
+        self.group_add_action = QAction("添加分组")
+        self.group_delete_action = QAction("删除分组")
         self.delete_action = QAction("删除整条订阅")
         self.delete_all_action = QAction("删除所有订阅")
         self.clear_action = QAction("清理空行")
@@ -297,6 +303,8 @@ class App(QWidget):
 
         self.up_action.triggered.connect(self.on_move_up_click)
         self.down_action.triggered.connect(self.on_move_down_click)
+        self.group_add_action.triggered.connect(self.on_group_add_action)
+        self.group_delete_action.triggered.connect(self.on_group_delete_action)
         self.delete_action.triggered.connect(self.menu_delete_action)
         self.delete_all_action.triggered.connect(self.menu_delete_all_action)
         self.clear_action.triggered.connect(self.on_clean_row_click)
@@ -307,6 +315,9 @@ class App(QWidget):
 
         self.menu.addAction(self.up_action)
         self.menu.addAction(self.down_action)
+        self.menu.addSeparator()
+        self.menu.addAction(self.group_add_action)
+        self.menu.addAction(self.group_delete_action)
         self.menu.addSeparator()
         self.menu.addAction(self.delete_action)
         self.menu.addAction(self.delete_all_action)
@@ -996,6 +1007,18 @@ class App(QWidget):
         zip_obj.write('config.json', backup_file_name)
         logger.info('备份完成')
         self.show_message('备份完成', '不怕手抖')
+
+    @pyqtSlot()
+    def on_group_add_action(self):
+        logger.info('on_group_add_action()')
+        g.data_groups.append(copy.deepcopy(g.new_data_group))
+        self.tableWidget_list.append(QTableWidget())
+        self.tab.addTab(self.tableWidget_list[-1], g.data_groups[-1]['name'])
+        self.tab.setCurrentIndex(len(g.data_groups) - 1)
+
+    @pyqtSlot()
+    def on_group_delete_action(self):
+        logger.info('on_group_delete_action()')
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
