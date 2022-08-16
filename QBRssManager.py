@@ -505,7 +505,8 @@ class App(QWidget):
         # 设置图标
         self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         # 只能通过设置样式来修改宽度, 其它设置没用
-        self.msg.setStyleSheet("QLabel {min-width: 80px;}")
+
+        self.msg.setStyleSheet("QLabel {min-width: " + str(len(message) * 20) + "px;}")
         # 提示信息
         self.msg.setText(message)
         # 标题
