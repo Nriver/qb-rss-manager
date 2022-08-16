@@ -970,8 +970,8 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         g.config['column_width_list'] = column_width_list_tmp
         save_config()
-        # 不使用弹窗了，点击太麻烦
-        # self.show_message("保存成功", "不错不错")
+        # 还是要弹窗，要有点提示，不然容易忘记
+        self.show_message("保存成功", "不错不错")
         # 提示信息
         self.text_browser.clear()
         self.text_browser.append(f'保存成功!')
