@@ -1,4 +1,5 @@
 import json
+import json
 import os
 import re
 import subprocess
@@ -138,7 +139,7 @@ class App(QWidget):
         logger.info(f"custom_resize_event {self.height, self.tableWidget.height(), self.text_browser.height()}")
         logger.info(f"splitter_state {self.splitter.saveState()}")
         g.config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
-        save_config(g.config, g.data_list, update_data=False)
+        save_config(update_data=False)
 
     def createButton(self):
         self.output_button = QPushButton('生成RSS订阅下载规则', self)
@@ -320,7 +321,7 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         logger.info(column_width_list_tmp)
         g.config['column_width_list'] = column_width_list_tmp
-        save_config(g.config, g.data_list, update_data=False)
+        save_config(update_data=False)
 
     def load_type_hints(self, row):
         # 输入过程中实时过滤数据
@@ -530,8 +531,12 @@ class App(QWidget):
             self.tableWidget.setItem(r - 1, i, item2)
 
         self.tableWidget.setCurrentCell(r - 1, c)
+
+        # 更新数据
+        g.update_data_list()
+
         if g.config['auto_save']:
-            save_config(g.config, g.data_list)
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -557,8 +562,12 @@ class App(QWidget):
             self.tableWidget.setItem(r + 1, i, item2)
 
         self.tableWidget.setCurrentCell(r + 1, c)
+
+        # 更新数据
+        g.update_data_list()
+
         if g.config['auto_save']:
-            save_config(g.config, g.data_list)
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -575,18 +584,20 @@ class App(QWidget):
             text = try_convert_time(text, g.config['date_auto_zfill'])
             self.tableWidget.currentItem().setText(text)
 
-        # 修改数据
         g.data_list[r][c] = text
+        # 更新数据
+        g.update_data_list()
+
         logger.info(f'on_cell_changed 结果 {g.data_list}')
         if g.config['auto_save']:
-            save_config(g.config, g.data_list)
+            save_config()
 
         # 记录数据修改的时间作为简易版本号, 用来标记搜索结果是否要更新
         self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
 
     @pyqtSlot()
     def on_import_exist_qb_rule_action(self):
-        logger.info('读取qb订阅规则')
+        logger.info('导入qb订阅规则')
 
         # 尝试通过api读取rss配置
         rss_rules = []
@@ -687,6 +698,11 @@ class App(QWidget):
                 if cy in g.config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -705,24 +721,46 @@ class App(QWidget):
 
         with open(share_file_path, 'r', encoding='utf-8') as f:
             share_data = json.loads(f.read())
-            # 对比表格内已有数据
-            g.data_list = clean_data_list(g.data_list)
-            for x in share_data:
-                if x in g.data_list:
-                    continue
-                g.data_list.append(x)
+            # 旧版数据兼容，以后准备删除
+            if 'version' not in share_data:
+                logger.info('导入旧版共享数据')
+                # 对比表格内已有数据
+                g.data_list = clean_data_list(g.data_list)
+                for x in share_data:
+                    if x in g.data_list:
+                        continue
+                    g.data_list.append(x)
+            elif share_data['version'] == 'v1':
+                logger.info('导入 v1 数据')
+                g.data_list = clean_data_list(g.data_list)
+                if 'data_group' in share_data:
+                    for x in share_data['data_group']['data']:
+                        line = g.convert_v1_line(x)
+                        if line in g.data_list:
+                            continue
+                        g.data_list.append(line)
+            else:
+                logger.info('未知格式的数据')
+                return
 
-        # 长度补充
-        if len(g.data_list) < g.config['max_row_size']:
-            for _ in range(g.config['max_row_size'] - len(g.data_list)):
-                g.data_list.append(['' for x in range(len(headers))])
-        # 更新整个列表
-        for cx, row in enumerate(g.data_list):
-            for cy, d in enumerate(row):
-                item = QTableWidgetItem(d)
-                if cy in g.config['center_columns']:
-                    item.setTextAlignment(Qt.AlignCenter)
-                self.tableWidget.setItem(cx, cy, item)
+            # 长度补充
+            if len(g.data_list) < g.config['max_row_size']:
+                for _ in range(g.config['max_row_size'] - len(g.data_list)):
+                    g.data_list.append(['' for x in range(len(headers))])
+            # 更新整个列表
+            for cx, row in enumerate(g.data_list):
+                for cy, d in enumerate(row):
+                    item = QTableWidgetItem(d)
+                    if cy in g.config['center_columns']:
+                        item.setTextAlignment(Qt.AlignCenter)
+                    self.tableWidget.setItem(cx, cy, item)
+
+            # 更新数据
+            g.update_data_list()
+            # 保存结果
+            if g.config['auto_save']:
+                save_config()
+
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -738,7 +776,17 @@ class App(QWidget):
             # 没有选择文件时的异常处理
             return
         with open(share_file_path, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(clean_data_list(g.data_list), ensure_ascii=False, indent=4))
+            # 旧版数据
+            # f.write(json.dumps(clean_data_list(g.data_list), ensure_ascii=False, indent=4))
+            # v1 结构数据
+            output_data = {
+                "version": "v1",
+                "data_group": {
+                    'name': g.data_groups[g.current_data_list_index]['name'],
+                    'data': g.clean_group_data(g.data_groups[g.current_data_list_index]['data'])
+                }
+            }
+            f.write(json.dumps(output_data, ensure_ascii=False, indent=4))
 
     @pyqtSlot()
     def on_export_click(self):
@@ -828,19 +876,15 @@ class App(QWidget):
     def on_load_config_click(self):
         self.tableWidget.blockSignals(True)
         # 这里要覆盖变量
-        with open('config.json', 'r', encoding='utf-8') as f:
-            g.config = json.loads(f.read())
-            g.data_list = g.config['data_list'][::]
-            if len(g.data_list) < g.config['max_row_size']:
-                for _ in range(g.config['max_row_size'] - len(g.data_list)):
-                    g.data_list.append(['' for x in range(len(headers))])
-            # 重新渲染数据
-            for cx, row in enumerate(g.data_list):
-                for cy, d in enumerate(row):
-                    item = QTableWidgetItem(d)
-                    if cy in g.config['center_columns']:
-                        item.setTextAlignment(Qt.AlignCenter)
-                    self.tableWidget.setItem(cx, cy, item)
+        g.config, g.data_list = g.init_config()
+
+        # 重新渲染数据
+        for cx, row in enumerate(g.data_list):
+            for cy, d in enumerate(row):
+                item = QTableWidgetItem(d)
+                if cy in g.config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
@@ -851,8 +895,12 @@ class App(QWidget):
         for i in range(len(headers)):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         g.config['column_width_list'] = column_width_list_tmp
-        save_config(g.config, g.data_list)
-        self.show_message("保存成功", "不错不错")
+        save_config()
+        # 不使用弹窗了，点击太麻烦
+        # self.show_message("保存成功", "不错不错")
+        # 提示信息
+        self.text_browser.clear()
+        self.text_browser.append(f'保存成功!')
 
     @pyqtSlot()
     def on_clean_row_click(self):
@@ -877,7 +925,7 @@ class App(QWidget):
     def on_backup_click(self):
         """备份配置"""
         # 先保存再备份
-        save_config(g.config, g.data_list)
+        save_config()
         logger.info('备份')
         backup_file_name = f'config_{datetime.now()}.json'
         logger.info(backup_file_name)
@@ -975,9 +1023,11 @@ class App(QWidget):
                         self.tableWidget.setItem(new_r, new_c, item)
                         g.data_list[new_r][new_c] = cell_data
                         logger.info(f'粘贴结果 {g.data_list}')
+                    # 更新数据
+                    g.update_data_list()
                     # 保存结果
                     if g.config['auto_save']:
-                        save_config(g.config, g.data_list)
+                        save_config()
                 # app.clipboard().setText('')
                 self.tableWidget.blockSignals(False)
                 return
@@ -1001,9 +1051,11 @@ class App(QWidget):
                     self.tableWidget.setItem(new_r, new_c, item)
                     g.data_list[new_r][new_c] = cell.data()
                     logger.info(f'粘贴结果 {g.data_list}')
+                # 更新数据
+                g.update_data_list()
                 # 保存结果
                 if g.config['auto_save']:
-                    save_config(g.config, g.data_list)
+                    save_config()
                 self.tableWidget.blockSignals(False)
 
         # 搜索
@@ -1035,8 +1087,10 @@ class App(QWidget):
                 c = x.column()
                 self.tableWidget.setItem(r, c, QTableWidgetItem(""))
                 g.data_list[r][c] = ""
+            # 更新数据
+            g.update_data_list()
             if g.config['auto_save']:
-                save_config(g.config, g.data_list)
+                save_config()
             self.tableWidget.blockSignals(False)
 
         # 方向键
@@ -1080,9 +1134,11 @@ class App(QWidget):
                     self.tableWidget.setItem(new_r, new_c, QTableWidgetItem(cell_data))
                     g.data_list[new_r][new_c] = cell_data
                     logger.info(f'粘贴结果 {g.data_list}')
+                # 更新数据
+                g.update_data_list()
                 # 保存结果
                 if g.config['auto_save']:
-                    save_config(g.config, g.data_list)
+                    save_config()
             self.tableWidget.blockSignals(False)
         elif event.key() in (Qt.Key_F3,):
             self.do_search()
@@ -1108,7 +1164,11 @@ class App(QWidget):
             if cy in g.config['center_columns']:
                 item.setTextAlignment(Qt.AlignCenter)
             self.tableWidget.setItem(cx, cy, item)
-
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     def menu_delete_all_action(self):
@@ -1123,13 +1183,18 @@ class App(QWidget):
                 if cy in g.config['center_columns']:
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
+        # 更新数据
+        g.update_data_list()
+        # 保存结果
+        if g.config['auto_save']:
+            save_config()
         self.tableWidget.blockSignals(False)
 
     def resizeEvent(self, event):
         logger.info("Window has been resized")
         g.config['full_window_width'] = self.normalGeometry().width()
         g.config['full_window_height'] = self.normalGeometry().height()
-        save_config(g.config, g.data_list, update_data=False)
+        save_config(update_data=False)
 
     def closeEvent(self, event):
         # 主窗口的关闭按钮事件
