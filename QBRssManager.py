@@ -19,6 +19,7 @@ import g
 from g import save_config, clean_data_list, headers
 from ui.custom_delegate import CustomDelegate
 from ui.custom_qtext_browser import CustomQTextBrowser
+from ui.custom_tab_bar import CustomTabBar
 from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path
@@ -98,6 +99,8 @@ class App(QWidget):
 
         # 无法共享widget 只好初始化多个widget了
         self.tab = QTabWidget()
+        # 自定义tabbar 方便修改
+        self.tab.setTabBar(CustomTabBar(self))
         for i, x in enumerate(self.tableWidget_list):
             self.tab.addTab(x, g.data_groups[i]['name'])
         self.tab.currentChanged.connect(self.on_tab_changed)
