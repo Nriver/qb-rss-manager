@@ -607,6 +607,9 @@ class App(QWidget):
         # 修改事件
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
+        current_item = self.tableWidget.currentItem()
+        if not current_item:
+            return
         text = self.tableWidget.currentItem().text()
         logger.info(f'{r, c, text}')
 
