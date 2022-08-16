@@ -949,17 +949,35 @@ class App(QWidget):
     @pyqtSlot()
     def on_load_config_click(self):
         self.tableWidget.blockSignals(True)
+        self.tab.blockSignals(True)
         # 这里要覆盖变量
         g.config, g.data_list = g.init_config()
 
-        # 重新渲染数据
-        for cx, row in enumerate(g.data_list):
-            for cy, d in enumerate(row):
-                item = QTableWidgetItem(d)
-                if cy in g.config['center_columns']:
-                    item.setTextAlignment(Qt.AlignCenter)
-                self.tableWidget.setItem(cx, cy, item)
+        # tab信息重新加载
+        tab_count = len(self.tableWidget_list)
+        # 删除tableWidget
+        for x in range(tab_count):
+            del self.tableWidget_list[0]
+        # 修改标记
+        g.current_data_list_index = 0
+
+        for x in range(tab_count):
+            self.tab.removeTab(0)
+
+        # 恢复 tableWidget_list
+        self.tableWidget_list = [QTableWidget() for _ in range(len(g.data_groups))]
+        # 恢复 tab
+        self.tab.setTabBar(CustomTabBar(self))
+        for i, x in enumerate(self.tableWidget_list):
+            self.tab.addTab(x, g.data_groups[i]['name'])
+        self.tab.currentChanged.connect(self.on_tab_changed)
+
         self.tableWidget.blockSignals(False)
+        self.tab.blockSignals(False)
+
+        # 切回第一个tab 重新渲染数据
+        self.tab.setCurrentIndex(0)
+        self.on_tab_changed(0)
 
     @pyqtSlot()
     def on_save_click(self):
