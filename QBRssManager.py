@@ -1011,14 +1011,49 @@ class App(QWidget):
     @pyqtSlot()
     def on_group_add_action(self):
         logger.info('on_group_add_action()')
+        # 添加data_group
         g.data_groups.append(copy.deepcopy(g.new_data_group))
+        # 添加tableWidget
         self.tableWidget_list.append(QTableWidget())
-        self.tab.addTab(self.tableWidget_list[-1], g.data_groups[-1]['name'])
-        self.tab.setCurrentIndex(len(g.data_groups) - 1)
+        # 修改标记
+        g.current_data_list_index = len(g.data_groups) - 1
+        # 添加tab
+        self.tab.addTab(self.tableWidget_list[g.current_data_list_index],
+                        g.data_groups[g.current_data_list_index]['name'])
+        # 修改tab焦点
+        self.tab.setCurrentIndex(g.current_data_list_index)
 
     @pyqtSlot()
     def on_group_delete_action(self):
         logger.info('on_group_delete_action()')
+        current_index = self.tab.currentIndex()
+        logger.info(current_index)
+        if len(self.tableWidget_list) > 1:
+            # 删除data_group
+            g.data_groups.pop(current_index)
+            # 删除tableWidget
+            del self.tableWidget_list[current_index]
+            # 修改标记(不能小于0)
+            g.current_data_list_index = max(len(g.data_groups), 0)
+            # 删除tab
+            self.tab.removeTab(current_index)
+        else:
+            logger.info('只剩最后一个tab')
+            # 处理data_group
+            g.data_groups.pop(current_index)
+            g.data_groups.append(copy.deepcopy(g.new_data_group))
+
+            # 删除tableWidget
+            del self.tableWidget_list[current_index]
+            self.tableWidget_list.append(QTableWidget())
+
+            # 修改标记
+            g.current_data_list_index = 0
+
+            # 删除tab
+            self.tab.removeTab(current_index)
+            self.tab.addTab(self.tableWidget_list[g.current_data_list_index],
+                            g.data_groups[g.current_data_list_index]['name'])
 
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
