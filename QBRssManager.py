@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import re
 import subprocess
@@ -13,7 +12,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSplitter, \
-    QFileDialog
+    QFileDialog, QTabWidget
 from loguru import logger
 
 import g
@@ -86,6 +85,7 @@ class App(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         self.createButton()
+        self.tableWidget_list = [QTableWidget() for _ in range(len(g.data_groups))]
         self.createTable()
         self.layout_button = QHBoxLayout()
         self.layout_button.addWidget(self.move_up_button)
@@ -95,6 +95,12 @@ class App(QWidget):
         self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.backup_button)
         self.layout_button.addWidget(self.output_button)
+
+        # 无法共享widget 只好初始化多个widget了
+        self.tab = QTabWidget()
+        for i, x in enumerate(self.tableWidget_list):
+            self.tab.addTab(x, g.data_groups[i]['name'])
+        self.tab.currentChanged.connect(self.on_tab_changed)
 
         # 文本框 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
@@ -114,7 +120,8 @@ class App(QWidget):
 
         # 增加QSplitter, 让文本框组件直接通过拖拽修改大小
         self.splitter = QSplitter(Qt.Vertical)
-        self.splitter.addWidget(self.tableWidget)
+        # self.splitter.addWidget(self.tableWidget)
+        self.splitter.addWidget(self.tab)
         self.splitter.addWidget(self.text_browser)
 
         try:
@@ -164,7 +171,7 @@ class App(QWidget):
         self.backup_button.clicked.connect(self.on_backup_click)
 
     def createTable(self):
-        self.tableWidget = QTableWidget()
+        self.tableWidget = self.tableWidget_list[g.current_data_list_index]
         # 行数
         self.tableWidget.setRowCount(len(g.data_list))
         # 列数
@@ -568,6 +575,30 @@ class App(QWidget):
 
         if g.config['auto_save']:
             save_config()
+        self.tableWidget.blockSignals(False)
+
+    def on_tab_changed(self, index):
+        """订阅分组tab切换"""
+        logger.info(f'on_tab_changed() {index}')
+        self.tableWidget.blockSignals(True)
+
+        g.current_data_list_index = index
+        logger.info('切换数据')
+        g.parse_v1()
+        logger.info('刷新表格')
+
+        logger.info('清理表格绑定事件, 防止右键菜单多次触发')
+        for x in self.tableWidget_list:
+            try:
+                # 如果没有绑定事件这里会抛异常，忽略就行
+                x.customContextMenuRequested.disconnect()
+            except:
+                pass
+        logger.info('切换表格')
+        self.tableWidget = self.tableWidget_list[g.current_data_list_index]
+        logger.info('创建表格 刷新界面')
+        self.createTable()
+
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()

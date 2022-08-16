@@ -150,7 +150,7 @@ def parse_v1():
 
     data_groups = config['data_dump']['data_groups']
     data_list = []
-    for x in data_groups[0]['data']:
+    for x in data_groups[current_data_list_index]['data']:
         data_list.append(convert_v1_line(x))
 
     # 补到 max_row_size 个数据
