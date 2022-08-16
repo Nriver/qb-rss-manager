@@ -1283,6 +1283,9 @@ class App(QWidget):
             }
             if event.key() in event_dict:
                 self.tab.setCurrentIndex(event_dict[event.key()])
+        elif event.key() == Qt.Key_S and (event.modifiers() & Qt.ControlModifier):
+            logger.info('ctrl s')
+            self.on_save_click()
 
     # return
 
