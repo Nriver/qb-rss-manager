@@ -835,33 +835,38 @@ class App(QWidget):
             try:
                 qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
                 # 要先加feed
+                # qb里已有的feed
                 rss_feeds = qb_client.rss_items()
                 rss_urls = [rss_feeds[x]['url'] for x in rss_feeds]
 
-                for x in clean_data_list(g.data_list):
-                    feed_url = x[6]
-                    if feed_url not in rss_urls:
-                        # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
-                        qb_client.rss_add_feed(feed_url, feed_url)
-                        rss_urls.append(feed_url)
+                # 订阅规则里所有的feed
+                for x in g.data_groups:
+                    for y in g.clean_group_data(x['data']):
+                        feed_url = y['affectedFeeds']
+                        if feed_url not in rss_urls:
+                            # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
+                            qb_client.rss_add_feed(feed_url, feed_url)
+                            rss_urls.append(feed_url)
 
                 # 清空已有规则
                 rss_rules = qb_client.rss_rules()
                 for x in rss_rules:
                     qb_client.rss_remove_rule(x)
+
                 # 添加新规则
-                for x in clean_data_list(g.data_list):
-                    qb_client.rss_set_rule(
-                        rule_name=x[0] + ' ' + x[1],
-                        rule_def={
-                            "enabled": True,
-                            "mustContain": x[2],
-                            "mustNotContain": x[3],
-                            "savePath": format_path_by_system(x[5]),
-                            "affectedFeeds": [x[6], ],
-                            "assignedCategory": x[7]
-                        }
-                    )
+                for x in g.data_groups:
+                    for y in g.clean_group_data(x['data']):
+                        qb_client.rss_set_rule(
+                            rule_name=(y['release_date'] + ' ' + y['series_name']).strip(),
+                            rule_def={
+                                "enabled": True,
+                                "mustContain": y['mustContain'],
+                                "mustNotContain": y['mustNotContain'],
+                                "savePath": y['savePath'],
+                                "affectedFeeds": [y['affectedFeeds'], ],
+                                "assignedCategory": y['assignedCategory']
+                            }
+                        )
                 # api通信不需要执行qb的exe
                 # subprocess.Popen([g.config['qb_executable']])
 
