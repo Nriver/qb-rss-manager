@@ -1,4 +1,4 @@
-import json
+import copy
 import json
 import os
 import re
@@ -13,13 +13,14 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSplitter, \
-    QFileDialog
+    QFileDialog, QTabWidget
 from loguru import logger
 
 import g
 from g import save_config, clean_data_list, headers
 from ui.custom_delegate import CustomDelegate
 from ui.custom_qtext_browser import CustomQTextBrowser
+from ui.custom_tab_bar import CustomTabBar
 from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path
@@ -44,7 +45,7 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'qBittorrent 订阅下载规则管理 v1.2.3 by Nriver'
+        self.title = 'qBittorrent 订阅下载规则管理 v1.2.4 by Nriver'
         # 图标
         self.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         self.left = 0
@@ -86,6 +87,7 @@ class App(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         self.createButton()
+        self.tableWidget_list = [QTableWidget() for _ in range(len(g.data_groups))]
         self.createTable()
         self.layout_button = QHBoxLayout()
         self.layout_button.addWidget(self.move_up_button)
@@ -95,6 +97,9 @@ class App(QWidget):
         self.layout_button.addWidget(self.save_button)
         self.layout_button.addWidget(self.backup_button)
         self.layout_button.addWidget(self.output_button)
+
+        self.tab = QTabWidget()
+        self.createTabs()
 
         # 文本框 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
@@ -114,7 +119,8 @@ class App(QWidget):
 
         # 增加QSplitter, 让文本框组件直接通过拖拽修改大小
         self.splitter = QSplitter(Qt.Vertical)
-        self.splitter.addWidget(self.tableWidget)
+        # self.splitter.addWidget(self.tableWidget)
+        self.splitter.addWidget(self.tab)
         self.splitter.addWidget(self.text_browser)
 
         try:
@@ -164,7 +170,7 @@ class App(QWidget):
         self.backup_button.clicked.connect(self.on_backup_click)
 
     def createTable(self):
-        self.tableWidget = QTableWidget()
+        self.tableWidget = self.tableWidget_list[g.current_data_list_index]
         # 行数
         self.tableWidget.setRowCount(len(g.data_list))
         # 列数
@@ -237,6 +243,14 @@ class App(QWidget):
         self.tableWidget.setItemDelegateForColumn(2, CustomDelegate(self))
         self.tableWidget.setItemDelegateForColumn(3, CustomDelegate(self))
 
+    def createTabs(self):
+        # 无法共享widget 只好初始化多个widget了
+        # 自定义tabbar 方便修改
+        self.tab.setTabBar(CustomTabBar(self))
+        for i, x in enumerate(self.tableWidget_list):
+            self.tab.addTab(x, g.data_groups[i]['name'])
+        self.tab.currentChanged.connect(self.on_tab_changed)
+
     def generateTextBrowserMenu(self, pos):
         """文本框自定义右键菜单"""
         time.sleep(0)
@@ -277,6 +291,8 @@ class App(QWidget):
         self.menu = QMenu(self)
         self.up_action = QAction("向上移动")
         self.down_action = QAction("向下移动")
+        self.group_add_action = QAction("添加分组")
+        self.group_delete_action = QAction("删除分组")
         self.delete_action = QAction("删除整条订阅")
         self.delete_all_action = QAction("删除所有订阅")
         self.clear_action = QAction("清理空行")
@@ -287,6 +303,8 @@ class App(QWidget):
 
         self.up_action.triggered.connect(self.on_move_up_click)
         self.down_action.triggered.connect(self.on_move_down_click)
+        self.group_add_action.triggered.connect(self.on_group_add_action)
+        self.group_delete_action.triggered.connect(self.on_group_delete_action)
         self.delete_action.triggered.connect(self.menu_delete_action)
         self.delete_all_action.triggered.connect(self.menu_delete_all_action)
         self.clear_action.triggered.connect(self.on_clean_row_click)
@@ -297,6 +315,9 @@ class App(QWidget):
 
         self.menu.addAction(self.up_action)
         self.menu.addAction(self.down_action)
+        self.menu.addSeparator()
+        self.menu.addAction(self.group_add_action)
+        self.menu.addAction(self.group_delete_action)
         self.menu.addSeparator()
         self.menu.addAction(self.delete_action)
         self.menu.addAction(self.delete_all_action)
@@ -479,7 +500,7 @@ class App(QWidget):
         self.tableWidget.blockSignals(False)
 
     def show_message(self, message, title):
-        """弹出框消息"""
+        """弹出框 消息"""
         self.msg = QMessageBox()
         # 设置图标
         self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
@@ -490,6 +511,27 @@ class App(QWidget):
         # 标题
         self.msg.setWindowTitle(title)
         self.msg.show()
+
+    def show_yes_no_message(self, message, title, yes_message, no_message):
+        """
+        弹出框 确认是否执行
+        封装一个函数，方便自定义提示信息和按钮
+        """
+        self.msg = QMessageBox()
+        # 设置图标
+        self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
+        # 只能通过设置样式来修改宽度, 其它设置没用
+        self.msg.setStyleSheet("QLabel {min-width: 80px;}")
+        # 提示信息
+        self.msg.setText(message)
+        # 标题
+        self.msg.setWindowTitle(title)
+        self.msg.addButton(QPushButton(yes_message), QMessageBox.YesRole)
+        self.msg.addButton(QPushButton(no_message), QMessageBox.RejectRole)
+        # self.msg.show()
+        # 这里返回0是yes, 1是no
+        res = int(self.msg.exec_())
+        return res
 
     @pyqtSlot()
     def on_double_click(self):
@@ -570,12 +612,39 @@ class App(QWidget):
             save_config()
         self.tableWidget.blockSignals(False)
 
+    def on_tab_changed(self, index):
+        """订阅分组tab切换"""
+        logger.info(f'on_tab_changed() {index}')
+        self.tableWidget.blockSignals(True)
+
+        g.current_data_list_index = index
+        logger.info('切换数据')
+        g.parse_v1()
+        logger.info('刷新表格')
+
+        logger.info('清理表格绑定事件, 防止右键菜单多次触发')
+        for x in self.tableWidget_list:
+            try:
+                # 如果没有绑定事件这里会抛异常，忽略就行
+                x.customContextMenuRequested.disconnect()
+            except:
+                pass
+        logger.info('切换表格')
+        self.tableWidget = self.tableWidget_list[g.current_data_list_index]
+        logger.info('创建表格 刷新界面')
+        self.createTable()
+
+        self.tableWidget.blockSignals(False)
+
     @pyqtSlot()
     def on_cell_changed(self):
         logger.info('on_cell_changed()')
         # 修改事件
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
+        current_item = self.tableWidget.currentItem()
+        if not current_item:
+            return
         text = self.tableWidget.currentItem().text()
         logger.info(f'{r, c, text}')
 
@@ -798,33 +867,38 @@ class App(QWidget):
             try:
                 qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
                 # 要先加feed
+                # qb里已有的feed
                 rss_feeds = qb_client.rss_items()
                 rss_urls = [rss_feeds[x]['url'] for x in rss_feeds]
 
-                for x in clean_data_list(g.data_list):
-                    feed_url = x[6]
-                    if feed_url not in rss_urls:
-                        # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
-                        qb_client.rss_add_feed(feed_url, feed_url)
-                        rss_urls.append(feed_url)
+                # 订阅规则里所有的feed
+                for x in g.data_groups:
+                    for y in g.clean_group_data(x['data']):
+                        feed_url = y['affectedFeeds']
+                        if feed_url not in rss_urls:
+                            # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
+                            qb_client.rss_add_feed(feed_url, feed_url)
+                            rss_urls.append(feed_url)
 
                 # 清空已有规则
                 rss_rules = qb_client.rss_rules()
                 for x in rss_rules:
                     qb_client.rss_remove_rule(x)
+
                 # 添加新规则
-                for x in clean_data_list(g.data_list):
-                    qb_client.rss_set_rule(
-                        rule_name=x[0] + ' ' + x[1],
-                        rule_def={
-                            "enabled": True,
-                            "mustContain": x[2],
-                            "mustNotContain": x[3],
-                            "savePath": format_path_by_system(x[5]),
-                            "affectedFeeds": [x[6], ],
-                            "assignedCategory": x[7]
-                        }
-                    )
+                for x in g.data_groups:
+                    for y in g.clean_group_data(x['data']):
+                        qb_client.rss_set_rule(
+                            rule_name=(y['release_date'] + ' ' + y['series_name']).strip(),
+                            rule_def={
+                                "enabled": True,
+                                "mustContain": y['mustContain'],
+                                "mustNotContain": y['mustNotContain'],
+                                "savePath": y['savePath'],
+                                "affectedFeeds": [y['affectedFeeds'], ],
+                                "assignedCategory": y['assignedCategory']
+                            }
+                        )
                 # api通信不需要执行qb的exe
                 # subprocess.Popen([g.config['qb_executable']])
 
@@ -896,8 +970,8 @@ class App(QWidget):
             column_width_list_tmp.append(self.tableWidget.columnWidth(i))
         g.config['column_width_list'] = column_width_list_tmp
         save_config()
-        # 不使用弹窗了，点击太麻烦
-        # self.show_message("保存成功", "不错不错")
+        # 还是要弹窗，要有点提示，不然容易忘记
+        self.show_message("保存成功", "不错不错")
         # 提示信息
         self.text_browser.clear()
         self.text_browser.append(f'保存成功!')
@@ -934,6 +1008,53 @@ class App(QWidget):
         logger.info('备份完成')
         self.show_message('备份完成', '不怕手抖')
 
+    @pyqtSlot()
+    def on_group_add_action(self):
+        logger.info('on_group_add_action()')
+        # 添加data_group
+        g.data_groups.append(copy.deepcopy(g.new_data_group))
+        # 添加tableWidget
+        self.tableWidget_list.append(QTableWidget())
+        # 修改标记
+        g.current_data_list_index = len(g.data_groups) - 1
+        # 添加tab
+        self.tab.addTab(self.tableWidget_list[g.current_data_list_index],
+                        g.data_groups[g.current_data_list_index]['name'])
+        # 修改tab焦点
+        self.tab.setCurrentIndex(g.current_data_list_index)
+
+    @pyqtSlot()
+    def on_group_delete_action(self):
+        logger.info('on_group_delete_action()')
+        current_index = self.tab.currentIndex()
+        logger.info(current_index)
+        if len(self.tableWidget_list) > 1:
+            # 删除data_group
+            g.data_groups.pop(current_index)
+            # 删除tableWidget
+            del self.tableWidget_list[current_index]
+            # 修改标记(不能小于0)
+            g.current_data_list_index = max(len(g.data_groups), 0)
+            # 删除tab
+            self.tab.removeTab(current_index)
+        else:
+            logger.info('只剩最后一个tab')
+            # 处理data_group
+            g.data_groups.pop(current_index)
+            g.data_groups.append(copy.deepcopy(g.new_data_group))
+
+            # 删除tableWidget
+            del self.tableWidget_list[current_index]
+            self.tableWidget_list.append(QTableWidget())
+
+            # 修改标记
+            g.current_data_list_index = 0
+
+            # 删除tab
+            self.tab.removeTab(current_index)
+            self.tab.addTab(self.tableWidget_list[g.current_data_list_index],
+                            g.data_groups[g.current_data_list_index]['name'])
+
     def handle_key_press(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_F2):
             logger.info('edit cell')
@@ -950,7 +1071,7 @@ class App(QWidget):
 
             self.tableWidget.edit(self.tableWidget.currentIndex())
 
-        #   复制粘贴
+        # 复制粘贴
         elif event.key() == Qt.Key_C and (event.modifiers() & Qt.ControlModifier):
             logger.info('ctrl c')
             self.copied_cells = sorted(self.tableWidget.selectedIndexes())
@@ -1147,6 +1268,22 @@ class App(QWidget):
             if self.search_window and self.search_window.isVisible():
                 self.search_window.close()
 
+        elif event.modifiers() & Qt.AltModifier:
+            event_dict = {
+                Qt.Key_1: 0,
+                Qt.Key_2: 1,
+                Qt.Key_3: 2,
+                Qt.Key_4: 3,
+                Qt.Key_5: 4,
+                Qt.Key_6: 5,
+                Qt.Key_7: 6,
+                Qt.Key_8: 7,
+                Qt.Key_9: 8,
+                Qt.Key_0: 9,
+            }
+            if event.key() in event_dict:
+                self.tab.setCurrentIndex(event_dict[event.key()])
+
     # return
 
     def menu_delete_action(self):
@@ -1174,6 +1311,16 @@ class App(QWidget):
     def menu_delete_all_action(self):
         # 右键菜单 删除所有订阅
         logger.info('删除所有订阅')
+
+        # 普通写法
+        # res = QMessageBox.question(self, '警告', '确认要删除所有订阅吗?', QMessageBox.Yes | QMessageBox.No)
+        # if res == QMessageBox.No:
+        #     return
+
+        res = self.show_yes_no_message('确认要删除所有订阅吗?', '警告', '是', '否')
+        if res != 0:
+            return
+
         self.tableWidget.blockSignals(True)
         for x in range(len(g.data_list)):
             g.data_list[x] = ['' for _ in range(len(headers))]
