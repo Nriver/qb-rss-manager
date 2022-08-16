@@ -1071,7 +1071,7 @@ class App(QWidget):
 
             self.tableWidget.edit(self.tableWidget.currentIndex())
 
-        #   复制粘贴
+        # 复制粘贴
         elif event.key() == Qt.Key_C and (event.modifiers() & Qt.ControlModifier):
             logger.info('ctrl c')
             self.copied_cells = sorted(self.tableWidget.selectedIndexes())
@@ -1267,6 +1267,22 @@ class App(QWidget):
         elif event.key() in (Qt.Key_Escape,):
             if self.search_window and self.search_window.isVisible():
                 self.search_window.close()
+
+        elif event.modifiers() & Qt.AltModifier:
+            event_dict = {
+                Qt.Key_1: 0,
+                Qt.Key_2: 1,
+                Qt.Key_3: 2,
+                Qt.Key_4: 3,
+                Qt.Key_5: 4,
+                Qt.Key_6: 5,
+                Qt.Key_7: 6,
+                Qt.Key_8: 7,
+                Qt.Key_9: 8,
+                Qt.Key_0: 9,
+            }
+            if event.key() in event_dict:
+                self.tab.setCurrentIndex(event_dict[event.key()])
 
     # return
 
