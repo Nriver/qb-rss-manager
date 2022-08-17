@@ -1048,6 +1048,11 @@ class App(QWidget):
     @pyqtSlot()
     def on_group_delete_action(self):
         logger.info('on_group_delete_action()')
+
+        res = self.show_yes_no_message('确认要删除当前分组吗?', '警告', '是', '否')
+        if res != 0:
+            return
+
         current_index = self.tab.currentIndex()
         logger.info(current_index)
         if len(self.tableWidget_list) > 1:
