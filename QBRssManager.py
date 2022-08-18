@@ -837,8 +837,13 @@ class App(QWidget):
     def on_export_to_share_file_action(self):
         logger.info('导出规则到文件进行分享')
         # 这里用完整路径可以设置默认名称
+        default_file_name = 'rss订阅规则分享.json'
+        group_name = g.data_groups[g.current_data_list_index]['name']
+        if group_name:
+            default_file_name = f"rss订阅规则分享-{group_name}.json"
+
         file_info = QFileDialog.getSaveFileName(self, "选择输出目录文件",
-                                                os.path.join(resource_path('.'), 'rss订阅规则分享.json'),
+                                                os.path.join(resource_path('.'), default_file_name),
                                                 "json 文件(*.json)")
         share_file_path = file_info[0]
         logger.info(f'导出文件 {share_file_path}')
