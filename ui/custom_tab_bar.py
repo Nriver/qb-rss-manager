@@ -1,3 +1,5 @@
+import platform
+
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QTabBar, QLineEdit
 
@@ -10,11 +12,18 @@ class CustomTabBar(QTabBar):
     def __init__(self, parent):
         QTabBar.__init__(self, parent)
         self.editor = QLineEdit(self)
-        self.editor.setWindowFlags(QtCore.Qt.Popup)
+
+        if platform.system() == 'Windows':
+            # windows 特有的输入法bug, 必须要用Dialog才能切换输入法, 再设置成无边框模式就能看上去和Popup一样了
+            self.editor.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint)
+        else:
+            self.editor.setWindowFlags(QtCore.Qt.Popup)
+
         # 加上这个的话，只有回车才会使输入生效
         # self.editor.setFocusProxy(self)
         self.editor.editingFinished.connect(self.handleEditingFinished)
         self.editor.installEventFilter(self)
+        self.editor.activateWindow()
 
     def eventFilter(self, widget, event):
         if ((event.type() == QtCore.QEvent.MouseButtonPress and not self.editor.geometry().contains(
