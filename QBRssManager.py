@@ -1020,6 +1020,9 @@ class App(QWidget):
                     item.setTextAlignment(Qt.AlignCenter)
                 self.tableWidget.setItem(cx, cy, item)
 
+        # 更新数据
+        g.update_data_list()
+
         self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
