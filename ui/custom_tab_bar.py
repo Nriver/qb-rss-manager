@@ -23,7 +23,7 @@ class CustomTabBar(QTabBar):
         # self.editor.setFocusProxy(self)
         self.editor.editingFinished.connect(self.handleEditingFinished)
         self.editor.installEventFilter(self)
-        self.editor.activateWindow()
+        # self.editor.activateWindow()
 
     def eventFilter(self, widget, event):
         if ((event.type() == QtCore.QEvent.MouseButtonPress and not self.editor.geometry().contains(
