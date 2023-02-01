@@ -251,6 +251,11 @@ class App(QWidget):
             self.tab.addTab(x, g.data_groups[i]['name'])
         self.tab.currentChanged.connect(self.on_tab_changed)
 
+        # tab的右键菜单
+        # 注意这里要用tabBar() 否则会影响到这个tab里的组件的右键菜单
+        self.tab.tabBar().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tab.tabBar().customContextMenuRequested.connect(self.generateTabMenu)
+
     def generateTextBrowserMenu(self, pos):
         """文本框自定义右键菜单"""
         time.sleep(0)
@@ -291,8 +296,8 @@ class App(QWidget):
         self.menu = QMenu(self)
         self.up_action = QAction("向上移动")
         self.down_action = QAction("向下移动")
-        self.group_add_action = QAction("添加分组")
-        self.group_delete_action = QAction("删除分组")
+        # self.group_add_action = QAction("添加分组")
+        # self.group_delete_action = QAction("删除当前分组")
         self.delete_action = QAction("删除整条订阅")
         self.delete_all_action = QAction("删除所有订阅")
         self.clear_action = QAction("清理空行")
@@ -303,8 +308,8 @@ class App(QWidget):
 
         self.up_action.triggered.connect(self.on_move_up_click)
         self.down_action.triggered.connect(self.on_move_down_click)
-        self.group_add_action.triggered.connect(self.on_group_add_action)
-        self.group_delete_action.triggered.connect(self.on_group_delete_action)
+        # self.group_add_action.triggered.connect(self.on_group_add_action)
+        # self.group_delete_action.triggered.connect(self.on_group_delete_action)
         self.delete_action.triggered.connect(self.menu_delete_action)
         self.delete_all_action.triggered.connect(self.menu_delete_all_action)
         self.clear_action.triggered.connect(self.on_clean_row_click)
@@ -315,9 +320,9 @@ class App(QWidget):
 
         self.menu.addAction(self.up_action)
         self.menu.addAction(self.down_action)
-        self.menu.addSeparator()
-        self.menu.addAction(self.group_add_action)
-        self.menu.addAction(self.group_delete_action)
+        # self.menu.addSeparator()
+        # self.menu.addAction(self.group_add_action)
+        # self.menu.addAction(self.group_delete_action)
         self.menu.addSeparator()
         self.menu.addAction(self.delete_action)
         self.menu.addAction(self.delete_all_action)
@@ -329,8 +334,36 @@ class App(QWidget):
         self.menu.addAction(self.import_from_share_file_action)
         self.menu.addAction(self.export_to_share_file_action)
 
+        # 让弹出菜单在修正后的坐标显示
         self.menu.exec_(self.tableWidget.mapToGlobal(a))
         # return
+
+    def generateTabMenu(self, pos):
+
+        # tab的右键弹窗菜单
+        # 右键弹窗菜单加一个sleep, 防止长按右键导致右键事件被重复触发
+        time.sleep(0)
+        # 感觉弹出菜单和实际鼠标点击位置有偏差, 尝试手动修正
+        logger.info(f"pos {pos.x(), pos.y()}")
+        a = QPoint(pos.x() - 2, pos.y() - 24)
+
+        # 根据点击位置获取tab的index, 注意这里要用事件的pos位置, 不要用修正的坐标
+        tab_index = self.tab.tabBar().tabAt(pos)
+        logger.info(f'tab_index {tab_index}')
+
+        self.tabMenu = QMenu(self)
+        self.group_add_action = QAction("添加分组")
+        self.group_delete_action_dynamic = QAction("删除分组")
+
+        self.group_add_action.triggered.connect(self.on_group_add_action)
+
+        self.group_delete_action_dynamic.triggered.connect(lambda x: self.on_group_delete_action(tab_index))
+
+        self.tabMenu.addAction(self.group_add_action)
+        self.tabMenu.addAction(self.group_delete_action_dynamic)
+
+        # 让弹出菜单在修正后的坐标显示
+        self.tabMenu.exec_(self.tableWidget.mapToGlobal(a))
 
     def on_header_resized(self):
         if self.preventHeaderResizeEvent:
@@ -1054,39 +1087,43 @@ class App(QWidget):
         self.tab.setCurrentIndex(g.current_data_list_index)
 
     @pyqtSlot()
-    def on_group_delete_action(self):
-        logger.info('on_group_delete_action()')
+    def on_group_delete_action(self, tab_index=None):
+        logger.info(f'on_group_delete_action(), {tab_index}')
 
-        res = self.show_yes_no_message('确认要删除当前分组吗?', '警告', '是', '否')
+        # 这里要注意不能写成 if not tab_index, 因为 tab_index 如果是0是合法的
+        if tab_index is None:
+            tab_index = self.tab.currentIndex()
+
+        logger.info(f'准备删除tab {tab_index}')
+
+        res = self.show_yes_no_message(f"确认要删除分组 {g.data_groups[tab_index]['name']} 吗?", '警告', '是', '否')
         if res != 0:
             return
 
-        current_index = self.tab.currentIndex()
-        logger.info(current_index)
         if len(self.tableWidget_list) > 1:
             # 删除data_group
-            g.data_groups.pop(current_index)
+            g.data_groups.pop(tab_index)
             # 删除tableWidget
-            del self.tableWidget_list[current_index]
+            del self.tableWidget_list[tab_index]
             # 修改标记(不能小于0)
             g.current_data_list_index = max(len(g.data_groups), 0)
             # 删除tab
-            self.tab.removeTab(current_index)
+            self.tab.removeTab(tab_index)
         else:
             logger.info('只剩最后一个tab')
             # 处理data_group
-            g.data_groups.pop(current_index)
+            g.data_groups.pop(tab_index)
             g.data_groups.append(copy.deepcopy(g.new_data_group))
 
             # 删除tableWidget
-            del self.tableWidget_list[current_index]
+            del self.tableWidget_list[tab_index]
             self.tableWidget_list.append(QTableWidget())
 
             # 修改标记
             g.current_data_list_index = 0
 
             # 删除tab
-            self.tab.removeTab(current_index)
+            self.tab.removeTab(tab_index)
             self.tab.addTab(self.tableWidget_list[g.current_data_list_index],
                             g.data_groups[g.current_data_list_index]['name'])
 
