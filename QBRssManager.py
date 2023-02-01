@@ -25,7 +25,7 @@ from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path
 from utils.pyqt_util import catch_exceptions
-from utils.qb_util import check_qb_port_open
+from utils.qb_util import check_qb_port_open, parse_feed_url
 from utils.string_util import try_split_date_and_name
 from utils.time_util import try_convert_time
 from utils.windows_util import refresh_tray
@@ -384,6 +384,12 @@ class App(QWidget):
         current_row_feed = g.data_list[row][6]
         logger.info(f'current_row_feed {current_row_feed}')
 
+        if not current_row_feed:
+            self.text_browser.setText('缺少订阅地址')
+            return
+
+        feed_list = parse_feed_url(current_row_feed)
+
         if g.config['use_qb_api'] == 1 and check_qb_port_open(g.config['qb_api_ip'], g.config['qb_api_port']):
             # 使用qb的api读取feed
             try:
@@ -392,11 +398,12 @@ class App(QWidget):
                 rss_feeds = qb_client.rss_items(include_feed_data=True)
                 article_titles = []
                 for x in rss_feeds:
-                    if current_row_feed == rss_feeds[x]['url']:
+                    if rss_feeds[x]['url'] in feed_list:
                         for article in rss_feeds[x]['articles']:
                             article_titles.append(article['title'])
                 self.tableWidget.type_hints = article_titles
-                logger.info(self.tableWidget.type_hints)
+                # 数据太多可能会导致卡顿 这里尽量不要输出
+                # logger.info(self.tableWidget.type_hints)
                 return True
 
             # except qbittorrentapi.LoginFailed as e:
@@ -415,7 +422,7 @@ class App(QWidget):
                     feeds_json = json.loads(f.read())
                     logger.info(f'feeds_json {feeds_json}')
                     for x in feeds_json:
-                        if current_row_feed == feeds_json[x]['url']:
+                        if feeds_json[x]['url'] in feed_list:
                             feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
                             logger.info(f'feed_uid {feed_uid}')
                             break
@@ -426,9 +433,9 @@ class App(QWidget):
                     with open(article_path, 'r', encoding='utf-8') as f:
                         article = json.loads(f.read())
                         for x in article:
-                            article_titles.append(x['title'])
+                            article_titles.append(feed_uid + x['title'])
                     self.tableWidget.type_hints = article_titles
-                    logger.info(self.tableWidget.type_hints)
+                    # logger.info(self.tableWidget.type_hints)
                     return True
             except Exception as e:
                 logger.info(f'exception {e}')
@@ -918,10 +925,14 @@ class App(QWidget):
                 for x in g.data_groups:
                     for y in g.clean_group_data(x['data']):
                         feed_url = y['affectedFeeds']
-                        if feed_url not in rss_urls:
-                            # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
-                            qb_client.rss_add_feed(feed_url, feed_url)
-                            rss_urls.append(feed_url)
+                        feed_list = parse_feed_url(feed_url)
+                        for z in feed_list:
+                            if not z:
+                                continue
+                            if z not in rss_urls:
+                                # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
+                                qb_client.rss_add_feed(zip_obj, z)
+                                rss_urls.append(z)
 
                 # 清空已有规则
                 rss_rules = qb_client.rss_rules()
@@ -938,7 +949,7 @@ class App(QWidget):
                                 "mustContain": y['mustContain'],
                                 "mustNotContain": y['mustNotContain'],
                                 "savePath": y['savePath'],
-                                "affectedFeeds": [y['affectedFeeds'], ],
+                                "affectedFeeds": parse_feed_url(y['affectedFeeds']),
                                 "assignedCategory": y['assignedCategory']
                             }
                         )
@@ -966,7 +977,7 @@ class App(QWidget):
                     "mustContain": x[2],
                     "mustNotContain": x[3],
                     "savePath": format_path_by_system(x[5]),
-                    "affectedFeeds": [x[6], ],
+                    "affectedFeeds": parse_feed_url(x[6]),
                     "assignedCategory": x[7]
                 }
 
