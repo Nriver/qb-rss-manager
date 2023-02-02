@@ -537,6 +537,9 @@ class App(QWidget):
                 g.data_list[cx][cy] = d
                 self.tableWidget.setItem(cx, cy, item)
 
+        # data_groups 数据更新
+        g.update_data_list()
+
         self.tableWidget.blockSignals(False)
 
     def show_message(self, message, title):
