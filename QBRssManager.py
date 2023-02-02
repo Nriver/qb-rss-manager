@@ -1001,18 +1001,20 @@ class App(QWidget):
             # 不使用qb的api, 需要重启qb
             # 不使用qb的api暂时不方便添加feed
             output_data = {}
-            for x in clean_data_list(g.data_list):
-                logger.info(x)
-                item = {
-                    "enabled": True,
-                    "mustContain": x[2],
-                    "mustNotContain": x[3],
-                    "savePath": format_path_by_system(x[5]),
-                    "affectedFeeds": parse_feed_url(x[6]),
-                    "assignedCategory": x[7]
-                }
 
-                output_data[x[0] + ' ' + x[1]] = item
+            for x in g.data_groups:
+                for y in g.clean_group_data(x['data']):
+                    item = {
+                        "enabled": True,
+                        "mustContain": y['mustContain'],
+                        "mustNotContain": y['mustNotContain'],
+                        "savePath": y['savePath'],
+                        "affectedFeeds": parse_feed_url(y['affectedFeeds']),
+                        "assignedCategory": y['assignedCategory']
+                    }
+
+                    output_data[(y['release_date'] + ' ' + y['series_name']).strip()] = item
+            
             logger.info(g.config['rules_path'])
             with open(g.config['rules_path'], 'w', encoding='utf-8') as f:
                 f.write(json.dumps(output_data, ensure_ascii=False))
