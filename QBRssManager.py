@@ -962,7 +962,7 @@ class App(QWidget):
                                 continue
                             if z not in rss_urls:
                                 # 第一个参数是feed的url地址 第二个是feed的名称, 似乎通过api加会自动变成正确命名
-                                qb_client.rss_add_feed(zip_obj, z)
+                                qb_client.rss_add_feed(z, z)
                                 rss_urls.append(z)
 
                 # 清空已有规则
