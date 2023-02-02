@@ -690,6 +690,8 @@ class App(QWidget):
                 index]
             self.tableWidget_list[index], self.tableWidget_list[self.clicked_tab] = self.tableWidget_list[
                 self.clicked_tab], self.tableWidget_list[index]
+            # 更新当前点击tab index
+            self.clicked_tab = index
 
         # logger.info(f'g.data_groups {g.data_groups}')
 
