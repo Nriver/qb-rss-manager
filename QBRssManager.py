@@ -13,12 +13,13 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot, Qt, QPoint, QByteArray
 from PyQt5.QtWidgets import QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QDesktopWidget, \
     QStyleFactory, QPushButton, QHBoxLayout, QMessageBox, QMenu, QAction, QSplitter, \
-    QFileDialog, QTabWidget
+    QFileDialog
 from loguru import logger
 
 import g
 from g import save_config, clean_data_list, headers
 from ui.custom_delegate import CustomDelegate
+from ui.custom_qtab_widget import CustomQTabWidget
 from ui.custom_qtext_browser import CustomQTextBrowser
 from ui.custom_tab_bar import CustomTabBar
 from ui.search_window import SearchWindow
@@ -98,8 +99,10 @@ class App(QWidget):
         self.layout_button.addWidget(self.backup_button)
         self.layout_button.addWidget(self.output_button)
 
-        self.tab = QTabWidget()
+        self.tab = CustomQTabWidget()
         self.createTabs()
+        # 当前点击的tab index
+        self.clicked_tab = 0
 
         # 文本框 固定位置方便输出
         self.text_browser = CustomQTextBrowser(self)
@@ -249,12 +252,17 @@ class App(QWidget):
         self.tab.setTabBar(CustomTabBar(self))
         for i, x in enumerate(self.tableWidget_list):
             self.tab.addTab(x, g.data_groups[i]['name'])
+        self.tab.tabBarClicked.connect(self.on_tab_clicked)
         self.tab.currentChanged.connect(self.on_tab_changed)
 
         # tab的右键菜单
         # 注意这里要用tabBar() 否则会影响到这个tab里的组件的右键菜单
         self.tab.tabBar().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.tab.tabBar().customContextMenuRequested.connect(self.generateTabMenu)
+
+        # 设置可以拖动
+        # self.tab.tabBar().setMouseTracking(True)
+        self.tab.tabBar().setMovable(True)
 
     def generateTextBrowserMenu(self, pos):
         """文本框自定义右键菜单"""
@@ -660,14 +668,34 @@ class App(QWidget):
             save_config()
         self.tableWidget.blockSignals(False)
 
+    def on_tab_clicked(self, index):
+        self.clicked_tab = index
+        logger.info(f'当前点击的tab index {self.clicked_tab}')
+
     def on_tab_changed(self, index):
         """订阅分组tab切换"""
+        logger.info(f'当前点击的tab index {self.clicked_tab}')
+        # logger.info(f'g.current_data_list_index {g.current_data_list_index}')
         logger.info(f'on_tab_changed() {index}')
+        logger.info(f'self.tab.currentIndex() {self.tab.currentIndex()}')
+
         self.tableWidget.blockSignals(True)
 
         g.current_data_list_index = index
+
+        # 处理tab拖动过程中数据交换
+        if index != self.clicked_tab:
+            logger.info('数据交换')
+            g.data_groups[index], g.data_groups[self.clicked_tab] = g.data_groups[self.clicked_tab], g.data_groups[
+                index]
+            self.tableWidget_list[index], self.tableWidget_list[self.clicked_tab] = self.tableWidget_list[
+                self.clicked_tab], self.tableWidget_list[index]
+
+        # logger.info(f'g.data_groups {g.data_groups}')
+
         logger.info('切换数据')
         g.parse_v1()
+        # logger.info(g.data_list)
         logger.info('刷新表格')
 
         logger.info('清理表格绑定事件, 防止右键菜单多次触发')
@@ -1024,14 +1052,13 @@ class App(QWidget):
         # 恢复 tableWidget_list
         self.tableWidget_list = [QTableWidget() for _ in range(len(g.data_groups))]
         # 恢复 tab
-        self.tab.setTabBar(CustomTabBar(self))
-        for i, x in enumerate(self.tableWidget_list):
-            self.tab.addTab(x, g.data_groups[i]['name'])
-        self.tab.currentChanged.connect(self.on_tab_changed)
+        self.createTabs()
 
         self.tableWidget.blockSignals(False)
         self.tab.blockSignals(False)
 
+        # 重置 当前点击的tab index
+        self.clicked_tab = 0
         # 切回第一个tab 重新渲染数据
         self.tab.setCurrentIndex(0)
         self.on_tab_changed(0)
