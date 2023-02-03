@@ -103,13 +103,18 @@ def init_config():
         else:
             exit()
     except:
+        # 配置解析错误
+        if not os.path.exists('config.json'):
+            # 不存在配置文件 生成默认配置
 
-        default_config = get_default_config()
-        config = default_config
+            default_config = get_default_config()
+            config = default_config
 
-        with open('config.json', 'w', encoding='utf-8') as f:
-            f.write(json.dumps(config, ensure_ascii=False, indent=4))
-        # 生成配置直接退出
+            with open('config.json', 'w', encoding='utf-8') as f:
+                f.write(json.dumps(config, ensure_ascii=False, indent=4))
+        else:
+            logger.error('配置解析报错!')
+        # 直接退出
         sys.exit()
 
     return config, data_list
