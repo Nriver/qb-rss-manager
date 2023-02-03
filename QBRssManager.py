@@ -562,8 +562,10 @@ class App(QWidget):
         # 设置图标
         self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         # 只能通过设置样式来修改宽度, 其它设置没用
-
-        self.msg.setStyleSheet("QLabel {min-width: " + str(len(message) * 20) + "px;}")
+        logger.info(f'信息字数 {len(message)}')
+        window_width = max(len(message) * 11, 80)
+        logger.info(f'窗口宽度 {window_width}')
+        self.msg.setStyleSheet("QLabel {min-width: " + str(window_width) + "px;}")
         # 提示信息
         self.msg.setText(message)
         # 标题
@@ -580,7 +582,7 @@ class App(QWidget):
         self.msg.setWindowIcon(QtGui.QIcon(resource_path('QBRssManager.ico')))
         # 只能通过设置样式来修改宽度, 其它设置没用
         logger.info(f'信息字数 {len(message)}')
-        window_width = max(len(message) * 12, 80)
+        window_width = max(len(message) * 11, 80)
         logger.info(f'窗口宽度 {window_width}')
 
         self.msg.setStyleSheet("QLabel {min-width: " + str(window_width) + "px;}")
