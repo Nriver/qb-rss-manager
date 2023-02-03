@@ -146,7 +146,7 @@ class App(QWidget):
     def custom_text_browser_resize_event(self, event):
         # 文本框大小变化时, 记录splitter的状态
         logger.info(f"custom_resize_event {self.height, self.tableWidget.height(), self.text_browser.height()}")
-        logger.info(f"splitter_state {self.splitter.saveState()}")
+        # logger.info(f"splitter_state {self.splitter.saveState()}")
         g.config['splitter_state'] = bytes(self.splitter.saveState().toHex()).decode('ascii')
         save_config(update_data=False)
 
@@ -599,6 +599,9 @@ class App(QWidget):
 
     @pyqtSlot()
     def on_double_click(self):
+        # 防止重复触发
+        self.tableWidget.blockSignals(True)
+
         # 双击事件
         logger.info("on_double_click()")
         for currentQTableWidgetItem in self.tableWidget.selectedItems():
@@ -611,6 +614,8 @@ class App(QWidget):
                 res = self.load_type_hints(currentQTableWidgetItem.row())
                 if res:
                     self.text_browser.filter_type_hint()
+
+        self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
     def on_move_up_click(self):
@@ -725,6 +730,9 @@ class App(QWidget):
     @pyqtSlot()
     def on_cell_changed(self):
         logger.info('on_cell_changed()')
+
+        self.tableWidget.blockSignals(True)
+
         # 修改事件
         r = self.tableWidget.currentRow()
         c = self.tableWidget.currentColumn()
@@ -749,6 +757,8 @@ class App(QWidget):
 
         # 记录数据修改的时间作为简易版本号, 用来标记搜索结果是否要更新
         self.data_update_timestamp = int(datetime.now().timestamp() * 1000)
+
+        self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
     def on_import_exist_qb_rule_action(self):
