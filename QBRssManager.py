@@ -1171,6 +1171,10 @@ class App(QWidget):
             del self.tableWidget_list[tab_index]
             # 修改标记(不能小于0)
             g.current_data_list_index = max(len(g.data_groups), 0)
+            # 修正 tab index
+            if tab_index == self.clicked_tab:
+                self.clicked_tab -= 1
+
             # 删除tab
             self.tab.removeTab(tab_index)
         else:
@@ -1185,6 +1189,8 @@ class App(QWidget):
 
             # 修改标记
             g.current_data_list_index = 0
+            # 修正 tab index
+            self.clicked_tab = 0
 
             # 删除tab
             self.tab.removeTab(tab_index)
