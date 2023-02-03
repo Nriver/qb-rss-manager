@@ -400,29 +400,33 @@ class App(QWidget):
 
         feed_list = parse_feed_url(current_row_feed)
 
-        if g.config['use_qb_api'] == 1 and check_qb_port_open(g.config['qb_api_ip'], g.config['qb_api_port']):
-            # 使用qb的api读取feed
-            try:
-                qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
-                self.text_browser.append('通过api获取feed')
-                rss_feeds = qb_client.rss_items(include_feed_data=True)
-                article_titles = []
-                for x in rss_feeds:
-                    if rss_feeds[x]['url'] in feed_list:
-                        for article in rss_feeds[x]['articles']:
-                            article_titles.append(article['title'])
-                self.tableWidget.type_hints = article_titles
-                # 数据太多可能会导致卡顿 这里尽量不要输出
-                # logger.info(self.tableWidget.type_hints)
-                return True
+        if g.config['use_qb_api'] == 1:
+            if check_qb_port_open(g.config['qb_api_ip'], g.config['qb_api_port']):
+                # 使用qb的api读取feed
+                try:
+                    qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
+                    self.text_browser.append('通过api获取feed')
+                    rss_feeds = qb_client.rss_items(include_feed_data=True)
+                    article_titles = []
+                    for x in rss_feeds:
+                        if rss_feeds[x]['url'] in feed_list:
+                            for article in rss_feeds[x]['articles']:
+                                article_titles.append(article['title'])
+                    self.tableWidget.type_hints = article_titles
+                    # 数据太多可能会导致卡顿 这里尽量不要输出
+                    # logger.info(self.tableWidget.type_hints)
+                    return True
 
-            # except qbittorrentapi.LoginFailed as e:
-            #     self.text_browser.append('api登录失败')
-            #     self.text_browser.append(e)
-            except Exception as e:
-                logger.error(e)
-                self.text_browser.append('通过api连接qb失败')
-                self.text_browser.append(f'报错信息 {repr(e)}')
+                # except qbittorrentapi.LoginFailed as e:
+                #     self.text_browser.append('api登录失败')
+                #     self.text_browser.append(e)
+                except Exception as e:
+                    logger.error(e)
+                    self.text_browser.append('通过api连接qb失败')
+                    self.text_browser.append(f'报错信息 {repr(e)}')
+            else:
+                self.show_message("通过api连接qb失败, 请检查qb是否开启Web UI. 如不需要通过api连接, 请将use_qb_api设为0", "错误")
+
         else:
             # 读取本地feed文件
             try:
@@ -443,7 +447,7 @@ class App(QWidget):
                     with open(article_path, 'r', encoding='utf-8') as f:
                         article = json.loads(f.read())
                         for x in article:
-                            article_titles.append(feed_uid + x['title'])
+                            article_titles.append(x['title'])
                     self.tableWidget.type_hints = article_titles
                     # logger.info(self.tableWidget.type_hints)
                     return True
