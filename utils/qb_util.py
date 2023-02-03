@@ -21,7 +21,16 @@ def check_qb_port_open(qb_api_ip, qb_api_port):
 
 def parse_feed_url(s):
     # 多个feed数据解析
-    return re.split(', |\||\s', s)
+    # 多行文本也可以解析
+    feeds = re.split(', |\||\s', s)
+    res = []
+    for x in feeds:
+        # 去除空格
+        x = x.strip()
+        # 顺便去重
+        if x and x not in res:
+            res.append(x)
+    return res
 
 
 if __name__ == '__main__':
