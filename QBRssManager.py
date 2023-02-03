@@ -387,6 +387,8 @@ class App(QWidget):
 
     def load_type_hints(self, row):
         # 输入过程中实时过滤数据
+        # row 是当前表格的行数, 这里读取对应行的订阅链接来获取feed数据
+
         self.tableWidget.type_hints = []
         # 当前行feed路径数据
         current_row_feed = g.data_list[row][6]

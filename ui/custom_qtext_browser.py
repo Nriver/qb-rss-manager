@@ -11,6 +11,7 @@ class CustomQTextBrowser(QTextBrowser):
         self.parent_app = parent_app
 
     def filter_type_hint(self):
+        # 过滤输入提示
         include_text = g.data_list[self.parent_app.tableWidget.currentItem().row()][2]
         exclude_text = g.data_list[self.parent_app.tableWidget.currentItem().row()][3]
         type_hints = self.parent_app.tableWidget.type_hints
