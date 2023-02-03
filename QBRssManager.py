@@ -1039,7 +1039,13 @@ class App(QWidget):
     def on_load_config_click(self):
         self.tableWidget.blockSignals(True)
         self.tab.blockSignals(True)
+
         # 这里要覆盖变量
+        # 重置 当前点击的tab index
+        self.clicked_tab = 0
+        # 重置data list序号 防止因为新建分组再还原导致数组越界
+        g.current_data_list_index = 0
+
         g.config, g.data_list = g.init_config()
 
         # tab信息重新加载
@@ -1061,8 +1067,6 @@ class App(QWidget):
         self.tableWidget.blockSignals(False)
         self.tab.blockSignals(False)
 
-        # 重置 当前点击的tab index
-        self.clicked_tab = 0
         # 切回第一个tab 重新渲染数据
         self.tab.setCurrentIndex(0)
         self.on_tab_changed(0)
