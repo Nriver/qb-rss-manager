@@ -600,7 +600,8 @@ class App(QWidget):
     @pyqtSlot()
     def on_double_click(self):
         # 防止重复触发
-        self.tableWidget.blockSignals(True)
+        time.sleep(0.001)
+        # self.tableWidget.blockSignals(True)
 
         # 双击事件
         logger.info("on_double_click()")
@@ -615,7 +616,7 @@ class App(QWidget):
                 if res:
                     self.text_browser.filter_type_hint()
 
-        self.tableWidget.blockSignals(False)
+        # self.tableWidget.blockSignals(False)
 
     @pyqtSlot()
     def on_move_up_click(self):
@@ -721,6 +722,14 @@ class App(QWidget):
             except:
                 pass
         logger.info('切换表格')
+
+        # 销毁当前表格 取消绑定事件
+        self.tableWidget.horizontalHeader().sectionResized.disconnect()
+        self.tableWidget.doubleClicked.disconnect()
+        self.tableWidget.cellChanged.disconnect()
+        self.tableWidget.keyPressEvent = None
+        # TODO: 内存没有完全清理 有泄漏
+        del self.tableWidget
         self.tableWidget = self.tableWidget_list[g.current_data_list_index]
         logger.info('创建表格 刷新界面')
         self.createTable()
