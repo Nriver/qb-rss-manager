@@ -1016,7 +1016,7 @@ class App(QWidget):
                     }
 
                     output_data[(y['release_date'] + ' ' + y['series_name']).strip()] = item
-            
+
             logger.info(g.config['rules_path'])
             with open(g.config['rules_path'], 'w', encoding='utf-8') as f:
                 f.write(json.dumps(output_data, ensure_ascii=False))
@@ -1132,8 +1132,11 @@ class App(QWidget):
         # 添加tab
         self.tab.addTab(self.tableWidget_list[g.current_data_list_index],
                         g.data_groups[g.current_data_list_index]['name'])
+        # 修改tab index 记录 防止发生数据交换
+        self.clicked_tab = g.current_data_list_index
         # 修改tab焦点
         self.tab.setCurrentIndex(g.current_data_list_index)
+
 
     @pyqtSlot()
     def on_group_delete_action(self, tab_index=None):
