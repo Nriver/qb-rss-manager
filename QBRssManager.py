@@ -737,30 +737,22 @@ class App(QWidget):
 
         self.tableWidget.blockSignals(False)
 
-    @pyqtSlot()
-    def on_cell_changed(self):
-        logger.info('on_cell_changed()')
-
-        self.tableWidget.blockSignals(True)
-
-        # 修改事件
-        r = self.tableWidget.currentRow()
-        c = self.tableWidget.currentColumn()
-        current_item = self.tableWidget.currentItem()
-        if not current_item:
-            return
-        text = self.tableWidget.currentItem().text()
-        logger.info(f'{r, c, text}')
-
+    def auto_complete(self, r, c, text):
+        """表格内容自动填充"""
         def auto_complete_rss_info():
             # 自动填充RSS订阅地址
             if not g.data_list[r][6]:
                 auto_complete = f''
-                # 获取上面填充过的RSS订阅地址
-                for x in range(r - 1, -1, -1):
-                    if g.data_list[x][6]:
-                        auto_complete = g.data_list[x][6]
-                        break
+                if g.data_groups[g.current_data_list_index]['rss_override']:
+                    auto_complete = g.data_groups[g.current_data_list_index]['rss_override']
+                elif g.config['rss_default']:
+                    auto_complete = g.config['rss_default']
+                else:
+                    # 获取上面填充过的RSS订阅地址
+                    for x in range(r - 1, -1, -1):
+                        if g.data_list[x][6]:
+                            auto_complete = g.data_list[x][6]
+                            break
                 g.data_list[r][6] = auto_complete
                 item = QTableWidgetItem(auto_complete)
                 self.tableWidget.setItem(r, 6, item)
@@ -808,6 +800,25 @@ class App(QWidget):
 
             # 自动填充RSS订阅地址
             auto_complete_rss_info()
+
+    @pyqtSlot()
+    def on_cell_changed(self):
+        logger.info('on_cell_changed()')
+
+        self.tableWidget.blockSignals(True)
+
+        # 修改事件
+        r = self.tableWidget.currentRow()
+        c = self.tableWidget.currentColumn()
+        current_item = self.tableWidget.currentItem()
+        if not current_item:
+            return
+        text = self.tableWidget.currentItem().text()
+        logger.info(f'{r, c, text}')
+
+        if text:
+            # 有输入内容时 自动补全
+            self.auto_complete(r, c, text)
 
         g.data_list[r][c] = text
         # 更新数据
@@ -1333,35 +1344,48 @@ class App(QWidget):
             # 如果剪贴板有内容 优先粘贴剪贴板
             # 可以兼容excel表格的复制粘贴
             if app.clipboard().text():
-                logger.info('导入excel')
                 r = self.tableWidget.currentRow()
                 c = self.tableWidget.currentColumn()
                 rows = app.clipboard().text().split('\n')
-                for b_r, row in enumerate(rows):
-                    if not row:
-                        continue
-                    cells = row.split('\t')
-                    logger.info(cells)
-
-                    for b_c, cell_data in enumerate(cells):
-                        new_r = b_r + r
-                        new_c = b_c + c
-                        if new_c > (len(headers) - 1):
-                            # 忽略跨行数据 防止数组越界
+                if len(rows) > 1 or '\t' in rows[0]:
+                    logger.info('导入excel')
+                    for b_r, row in enumerate(rows):
+                        if not row:
                             continue
-                        logger.info(f'粘贴数据 {new_r, new_c, cell_data}')
-                        item = QTableWidgetItem(cell_data)
-                        if new_c in g.config['center_columns']:
-                            item.setTextAlignment(Qt.AlignCenter)
+                        cells = row.split('\t')
+                        logger.info(cells)
 
-                        self.tableWidget.setItem(new_r, new_c, item)
-                        g.data_list[new_r][new_c] = cell_data
-                        logger.info(f'粘贴结果 {g.data_list}')
-                    # 更新数据
-                    g.update_data_list()
-                    # 保存结果
-                    if g.config['auto_save']:
-                        save_config()
+                        for b_c, cell_data in enumerate(cells):
+                            new_r = b_r + r
+                            new_c = b_c + c
+                            if new_c > (len(headers) - 1):
+                                # 忽略跨行数据 防止数组越界
+                                continue
+                            logger.info(f'粘贴数据 {new_r, new_c, cell_data}')
+                            item = QTableWidgetItem(cell_data)
+                            if new_c in g.config['center_columns']:
+                                item.setTextAlignment(Qt.AlignCenter)
+
+                            self.tableWidget.setItem(new_r, new_c, item)
+                            g.data_list[new_r][new_c] = cell_data
+                            # logger.info(f'粘贴结果 {g.data_list}')
+                        # 更新数据
+                        g.update_data_list()
+                        # 保存结果
+                        if g.config['auto_save']:
+                            save_config()
+                else:
+                    logger.info(f'粘贴文字 {rows}')
+                    if isinstance(rows, list):
+                        text = rows[0]
+                        item = QTableWidgetItem(text)
+                        if c in g.config['center_columns']:
+                            item.setTextAlignment(Qt.AlignCenter)
+                        self.tableWidget.setItem(r, c, item)
+                        if text:
+                            # 有输入内容时 自动补全
+                            self.auto_complete(r, c, text)
+
                 # app.clipboard().setText('')
                 self.tableWidget.blockSignals(False)
                 return
