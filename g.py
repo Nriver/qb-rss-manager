@@ -78,7 +78,7 @@ def get_default_config():
         'qb_api_port': 8080,
         'qb_api_username': 'admin',
         'qb_api_password': 'adminadmin',
-        'keyword_default': '',
+        'keyword_default': '{series_name}',
         'rss_default': '',
     }
 
