@@ -1026,7 +1026,9 @@ class App(QWidget):
                 "version": "v1",
                 "data_group": {
                     'name': g.data_groups[g.current_data_list_index]['name'],
-                    'data': g.clean_group_data(g.data_groups[g.current_data_list_index]['data'])
+                    'data': g.clean_group_data(g.data_groups[g.current_data_list_index]['data']),
+                    # 这个覆盖的配置就不导出了
+                    # 'rss_override': g.data_groups[g.current_data_list_index]['rss_override'],
                 }
             }
             f.write(json.dumps(output_data, ensure_ascii=False, indent=4))

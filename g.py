@@ -18,6 +18,7 @@ current_data_list_index = 0
 
 new_data_group = {
     'name': '新分组',
+    'rss_override': '',
     'data': [],
 }
 
@@ -30,6 +31,7 @@ def get_default_config():
         'data_groups': [
             {
                 'name': '默认分组',
+                'rss_override': '',
                 'data': [],
             }
         ]
@@ -74,6 +76,7 @@ def get_default_config():
         'qb_api_port': 8080,
         'qb_api_username': 'admin',
         'qb_api_password': 'adminadmin',
+        'rss_default': '',
     }
 
     return default_config
@@ -99,6 +102,12 @@ def init_config():
         elif 'data_dump' in config and config['data_dump']['version'] == 'v1':
             # 从config里加载data groups数据，后面的操作不要直接操作config对象，直接操作data_groups
             data_groups = config['data_dump']['data_groups']
+            # 修正配置，补充缺少的默认配置
+            for i in range(len(data_groups)):
+                for y in new_data_group:
+                    if y not in data_groups[i]:
+                        data_groups[i][y] = new_data_group[y]
+
             parse_v1()
         else:
             exit()
@@ -228,7 +237,8 @@ def dump_v1():
         cleaned_group_data = clean_group_data(data_group['data'])
         data_dump['data_groups'].append({
             'name': data_group['name'],
-            'data': cleaned_group_data
+            'rss_override': data_group['rss_override'],
+            'data': cleaned_group_data,
         })
 
     return data_dump
@@ -269,6 +279,7 @@ def parse_legacy():
     data_groups = [
         {
             'name': '默认分组',
+            'rss_override': '',
             'data': [],
         }
     ]
