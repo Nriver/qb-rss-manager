@@ -779,7 +779,9 @@ class App(QWidget):
 
             # 自动填充时间
             if not g.data_list[r][0]:
-                auto_complete = f'{year}年'
+                auto_complete = ''
+                if year:
+                    auto_complete = f'{year}年'
                 g.data_list[r][0] = auto_complete
                 item = QTableWidgetItem(auto_complete)
                 # 时间居中显示
