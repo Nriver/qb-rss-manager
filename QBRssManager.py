@@ -425,7 +425,8 @@ class App(QWidget):
                     self.text_browser.append('通过api连接qb失败')
                     self.text_browser.append(f'报错信息 {repr(e)}')
             else:
-                self.show_message("通过api连接qb失败, 请检查qb是否开启Web UI. 如不需要通过api连接, 请将use_qb_api设为0", "错误")
+                self.show_message("通过api连接qb失败, 请检查qb是否开启Web UI. 如不需要通过api连接, 请将use_qb_api设为0",
+                                  "错误")
 
         else:
             # 读取本地feed文件
@@ -751,10 +752,28 @@ class App(QWidget):
         text = self.tableWidget.currentItem().text()
         logger.info(f'{r, c, text}')
 
+        def auto_complete_rss_info():
+            # 自动填充RSS订阅地址
+            if not g.data_list[r][6]:
+                auto_complete = f''
+                # 获取上面填充过的RSS订阅地址
+                for x in range(r - 1, -1, -1):
+                    if g.data_list[x][6]:
+                        auto_complete = g.data_list[x][6]
+                        break
+                g.data_list[r][6] = auto_complete
+                item = QTableWidgetItem(auto_complete)
+                self.tableWidget.setItem(r, 6, item)
+
         # 第一列时间进行特殊转换处理
         if c == 0:
             text = try_convert_time(text, g.config['date_auto_zfill'])
             self.tableWidget.currentItem().setText(text)
+
+        # 填写关键字后，对其它字段进行自动填充
+        if c == 2:
+            logger.info('尝试自动填充')
+            auto_complete_rss_info()
 
         # 填写保存路径后，对其它字段进行自动填充
         if c == 5:
@@ -788,16 +807,7 @@ class App(QWidget):
                 self.tableWidget.setItem(r, 2, item)
 
             # 自动填充RSS订阅地址
-            if not g.data_list[r][6]:
-                auto_complete = f''
-                # 获取上面填充过的RSS订阅地址
-                for x in range(r-1, -1 ,-1):
-                    if g.data_list[x][6]:
-                        auto_complete = g.data_list[x][6]
-                        break
-                g.data_list[r][6] = auto_complete
-                item = QTableWidgetItem(auto_complete)
-                self.tableWidget.setItem(r, 6, item)
+            auto_complete_rss_info()
 
         g.data_list[r][c] = text
         # 更新数据
@@ -1210,7 +1220,6 @@ class App(QWidget):
         self.clicked_tab = g.current_data_list_index
         # 修改tab焦点
         self.tab.setCurrentIndex(g.current_data_list_index)
-
 
     @pyqtSlot()
     def on_group_delete_action(self, tab_index=None):
