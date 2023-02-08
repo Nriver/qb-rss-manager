@@ -24,7 +24,7 @@ from ui.custom_qtext_browser import CustomQTextBrowser
 from ui.custom_tab_bar import CustomTabBar
 from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
-from utils.path_util import resource_path, format_path_by_system, format_path
+from utils.path_util import resource_path, format_path_by_system, format_path, get_series_from_season_path
 from utils.pyqt_util import catch_exceptions
 from utils.qb_util import check_qb_port_open, parse_feed_url
 from utils.string_util import try_split_date_and_name
@@ -755,6 +755,49 @@ class App(QWidget):
         if c == 0:
             text = try_convert_time(text, g.config['date_auto_zfill'])
             self.tableWidget.currentItem().setText(text)
+
+        # 填写保存路径后，对其它字段进行自动填充
+        if c == 5:
+            logger.info('尝试自动填充')
+
+            # 尝试解析番剧名称
+            series_name, year = get_series_from_season_path(text)
+            logger.info(f'解析名称 {series_name} {year}')
+
+            # 自动填充时间
+            if not g.data_list[r][0]:
+                auto_complete = f'{year}年'
+                g.data_list[r][0] = auto_complete
+                item = QTableWidgetItem(auto_complete)
+                # 时间居中显示
+                item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(r, 0, item)
+
+            # 自动填充剧集名称
+            if not g.data_list[r][1]:
+                auto_complete = f'{series_name}'
+                g.data_list[r][1] = auto_complete
+                item = QTableWidgetItem(auto_complete)
+                self.tableWidget.setItem(r, 1, item)
+
+            # 自动填充关键字
+            if not g.data_list[r][2]:
+                auto_complete = f'{series_name}'
+                g.data_list[r][1] = auto_complete
+                item = QTableWidgetItem(auto_complete)
+                self.tableWidget.setItem(r, 2, item)
+
+            # 自动填充RSS订阅地址
+            if not g.data_list[r][6]:
+                auto_complete = f''
+                # 获取上面填充过的RSS订阅地址
+                for x in range(r-1, -1 ,-1):
+                    if g.data_list[x][6]:
+                        auto_complete = g.data_list[x][6]
+                        break
+                g.data_list[r][6] = auto_complete
+                item = QTableWidgetItem(auto_complete)
+                self.tableWidget.setItem(r, 6, item)
 
         g.data_list[r][c] = text
         # 更新数据

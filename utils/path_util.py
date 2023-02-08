@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 
@@ -23,3 +24,28 @@ def format_path_by_system(s):
         return format_path(s).replace('/', '\\')
     else:
         return format_path(s)
+
+def remove_tail_slash(s):
+    """去除末尾斜杠"""
+    return s.rstrip('/')
+
+
+def get_series_from_season_path(season_path):
+    """
+    修正系列名称获取 去掉结尾的年份
+    来自 Episode-ReName 项目, 做了一些修改
+    """
+    season_path = remove_tail_slash(format_path(season_path))
+    try:
+        series = os.path.basename(os.path.dirname(season_path))
+        pat = '\(\d{4}\)$'
+        res = re.search(pat, series)
+        if res:
+            year = res[0][1:-1]
+            series = series[:-6].strip()
+        else:
+            year = ''
+        return series, year
+    except:
+        return ''
+
