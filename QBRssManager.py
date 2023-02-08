@@ -1540,7 +1540,12 @@ class App(QWidget):
                 Qt.Key_0: 9,
             }
             if event.key() in event_dict:
-                self.tab.setCurrentIndex(event_dict[event.key()])
+                i = event_dict[event.key()]
+                if i < len(g.data_groups):
+                    g.current_data_list_index = i
+                    self.clicked_tab = g.current_data_list_index
+                    self.tab.setCurrentIndex(g.current_data_list_index)
+
         elif event.key() == Qt.Key_S and (event.modifiers() & Qt.ControlModifier):
             logger.info('ctrl s')
             self.on_save_click()
