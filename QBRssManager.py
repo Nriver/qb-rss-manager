@@ -739,10 +739,11 @@ class App(QWidget):
 
     def auto_complete(self, r, c, text):
         """表格内容自动填充"""
+
         def auto_complete_rss_info():
             # 自动填充RSS订阅地址
             if not g.data_list[r][6]:
-                auto_complete = f''
+                auto_complete = ''
                 if g.data_groups[g.current_data_list_index]['rss_override']:
                     auto_complete = g.data_groups[g.current_data_list_index]['rss_override']
                 elif g.config['rss_default']:
@@ -753,9 +754,10 @@ class App(QWidget):
                         if g.data_list[x][6]:
                             auto_complete = g.data_list[x][6]
                             break
-                g.data_list[r][6] = auto_complete
-                item = QTableWidgetItem(auto_complete)
-                self.tableWidget.setItem(r, 6, item)
+                if auto_complete:
+                    g.data_list[r][6] = auto_complete
+                    item = QTableWidgetItem(auto_complete)
+                    self.tableWidget.setItem(r, 6, item)
 
         # 第一列时间进行特殊转换处理
         if c == 0:
@@ -792,11 +794,21 @@ class App(QWidget):
                 self.tableWidget.setItem(r, 1, item)
 
             # 自动填充关键字
+            # 这里用到了format 不适合放到函数里去
             if not g.data_list[r][2]:
-                auto_complete = f'{series_name}'
-                g.data_list[r][1] = auto_complete
-                item = QTableWidgetItem(auto_complete)
-                self.tableWidget.setItem(r, 2, item)
+                auto_complete = ''
+                if g.data_groups[g.current_data_list_index]['keyword_override']:
+                    auto_complete = g.data_groups[g.current_data_list_index]['keyword_override'].format(**locals())
+                elif g.config['keyword_default']:
+                    auto_complete = g.config['keyword_default'].format(**locals())
+                else:
+                    # 获取上面解析的名字
+                    auto_complete = '{series_name}'.format(**locals())
+
+                if auto_complete:
+                    g.data_list[r][2] = auto_complete
+                    item = QTableWidgetItem(auto_complete)
+                    self.tableWidget.setItem(r, 2, item)
 
             # 自动填充RSS订阅地址
             auto_complete_rss_info()
@@ -1384,9 +1396,16 @@ class App(QWidget):
                         if c in g.config['center_columns']:
                             item.setTextAlignment(Qt.AlignCenter)
                         self.tableWidget.setItem(r, c, item)
+                        g.data_list[r][c] = text
                         if text:
                             # 有输入内容时 自动补全
                             self.auto_complete(r, c, text)
+
+                        # 更新数据
+                        g.update_data_list()
+                        # 保存结果
+                        if g.config['auto_save']:
+                            save_config()
 
                 # app.clipboard().setText('')
                 self.tableWidget.blockSignals(False)

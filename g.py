@@ -18,6 +18,7 @@ current_data_list_index = 0
 
 new_data_group = {
     'name': '新分组',
+    'keyword_override': '',
     'rss_override': '',
     'data': [],
 }
@@ -31,6 +32,7 @@ def get_default_config():
         'data_groups': [
             {
                 'name': '默认分组',
+                'keyword_override': '',
                 'rss_override': '',
                 'data': [],
             }
@@ -76,6 +78,7 @@ def get_default_config():
         'qb_api_port': 8080,
         'qb_api_username': 'admin',
         'qb_api_password': 'adminadmin',
+        'keyword_default': '',
         'rss_default': '',
     }
 
@@ -237,6 +240,7 @@ def dump_v1():
         cleaned_group_data = clean_group_data(data_group['data'])
         data_dump['data_groups'].append({
             'name': data_group['name'],
+            'keyword_override': data_group['keyword_override'],
             'rss_override': data_group['rss_override'],
             'data': cleaned_group_data,
         })
@@ -279,6 +283,7 @@ def parse_legacy():
     data_groups = [
         {
             'name': '默认分组',
+            'keyword_override': '',
             'rss_override': '',
             'data': [],
         }
