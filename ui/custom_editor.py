@@ -16,8 +16,12 @@ class CustomEditor(QtWidgets.QPlainTextEdit):
         self.index = index
         self.parent_app = parent_app
         # 默认最小高度和宽度
-        self.setMinimumWidth(150)
-        self.setMinimumHeight(60)
+        if self.index.column() == 2:
+            self.setMinimumWidth(210)
+            self.setMinimumHeight(240)
+        else:
+            self.setMinimumWidth(150)
+            self.setMinimumHeight(60)
         logger.info(f'输入框高度 {self.height()}')
         # 按键 事件
         self.keyPressEvent = self.custom_keypress
