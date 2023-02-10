@@ -411,11 +411,24 @@ class App(QWidget):
                     self.text_browser.append('通过api获取feed')
                     rss_feeds = qb_client.rss_items(include_feed_data=True)
                     article_titles = []
+                    article_details = []
                     for x in rss_feeds:
                         if rss_feeds[x]['url'] in feed_list:
                             for article in rss_feeds[x]['articles']:
+                                url = ''
+                                # feed的链接, 有点在url里面, 有的在link里面
+                                if 'url' in article:
+                                    url = article['url']
+                                elif 'link' in article:
+                                    url = article['link']
                                 article_titles.append(article['title'])
+                                article_details.append({
+                                    'title': article['title'],
+                                    'url': url,
+                                    'source_name': x,
+                                })
                     self.tableWidget.type_hints = article_titles
+                    self.tableWidget.article_details = article_details
                     # 数据太多可能会导致卡顿 这里尽量不要输出
                     # logger.info(self.tableWidget.type_hints)
                     return True
