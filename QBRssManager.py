@@ -782,9 +782,8 @@ class App(QWidget):
 
             # 自动填充时间
             if not g.data_list[r][0]:
-                auto_complete = ''
-                if year:
-                    auto_complete = f'{year}年'
+                # 直接使用当前时间, 忽略解析的时间
+                auto_complete = f'{datetime.now().year}年{str(datetime.now().month).zfill(2)}月'
                 g.data_list[r][0] = auto_complete
                 item = QTableWidgetItem(auto_complete)
                 # 时间居中显示
@@ -906,7 +905,7 @@ class App(QWidget):
                 "affectedFeeds": [x[6], ],
                 "assignedCategory": x[7]
             }
-            # 这里strip一下, 防止没有播出时间列匹配不到而重复导入
+            # 这里strip一下, 防止没有添加时间列匹配不到而重复导入
             exist_data[(x[0] + ' ' + x[1]).strip()] = item
 
         new_rules = []
