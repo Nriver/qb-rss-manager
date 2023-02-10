@@ -7,18 +7,22 @@ qBittorrent rss订阅 下载规则管理
 <!--ts-->
 
 * [qb-rss-manager](#qb-rss-manager)
-* [Windows/Linux桌面环境下的qb使用](#windowslinux桌面环境下的qb使用)
-* [docker等环境下的qb使用](#docker等环境下的qb使用)
-* [导入/导出规则进行分享](#导入导出规则进行分享)
-* [config.json部分配置参数说明](#configjson部分配置参数说明)
-    * [自动填充](#自动填充)
-        * [触发机制](#触发机制)
-        * [相关配置](#相关配置)
-* [快捷操作/快捷键说明](#快捷操作快捷键说明)
 * [qb-rss-manager 懒人包](#qb-rss-manager-懒人包)
     * [警告](#警告)
     * [懒人包使用方法](#懒人包使用方法)
     * [提示](#提示)
+    * [懒人使用建议](#懒人使用建议)
+* [qb订阅管理器 初始化配置](#qb订阅管理器-初始化配置)
+    * [Windows/Linux桌面环境下的qb使用](#windowslinux桌面环境下的qb使用)
+    * [通过api连接docker等环境下的qb使用](#通过api连接docker等环境下的qb使用)
+* [导入/导出规则进行分享](#导入导出规则进行分享)
+* [config.json部分配置参数说明](#configjson部分配置参数说明)
+    * [自动填充](#自动填充)
+        * [触发机制](#触发机制)
+        * [默认关键字模板配置](#默认关键字模板配置)
+        * [限制解析的 series_name 长度](#限制解析的-series_name-长度)
+        * [默认订阅地址配置](#默认订阅地址配置)
+* [快捷操作/快捷键说明](#快捷操作快捷键说明)
 * [声明](#声明)
 * [关于图标](#关于图标)
 * [Stargazers 数据](#stargazers-数据)
@@ -27,7 +31,57 @@ qBittorrent rss订阅 下载规则管理
 
 <!--te-->
 
-# 初始化配置
+# qb-rss-manager 懒人包
+
+填好想要自动下载的文件信息，就能让qb自动下载想要的番剧，自动追番必备，用过都说好！懒人包包含qb订阅管理工具, 自动重命名工具,
+qb增强版, 都已经配置完毕, 可以开箱即用.
+
+## 警告
+
+本工具没有任何售后, 在使用过程中发生的一切后果由使用者自己承担. 对于程序bug, 使用者因操作不当或其它原因导致的数据丢失,
+硬件损坏等问题概不负责.
+
+## 懒人包使用方法
+
+[Release页面](https://github.com/Nriver/qb-rss-manager/releases) 找到懒人包下载下来解压.
+
+0. 运行all in one初始化工具 aio_init.exe
+1. 启动 qbittorrent.exe, 设置rss源, 更新数据.
+2. 运行qb管理器 QBRssManager.exe
+3. 修改 '保存路径' 列的存储路径, 注意目录命名会影响自动重命名是否执行
+4. 点击 '保存', 点击 '生成RSS订阅下载规则', 会自动生成qb的rss下载规则并启动qb. (注意qb启动后,
+   匹配到rss订阅规则就会开始下载.)
+5. 仿照示例写自己的规则, 重复3-4
+
+初始化  
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/0.gif)
+
+加载RSS数据  
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/1.gif)
+
+管理RSS订阅  
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/2.gif)
+
+等待自动重命名  
+![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/3.gif)
+
+## 提示
+
+0. 程序路径可以有中文但是不要有空格
+1. 输入关键字过滤时下方会显示过滤结果
+2. 修改完记得点保存或者备份
+3. 下载完成后 Season XX 目录下的文件会自动重命名, 默认下载完成后15秒自动改名. 有可能删除文件或者覆盖文件, 自己看着办吧.
+4. 需要添加新的rss源请先在qb内添加, 确认qb能加载rss数据, 之后用管理器管理订阅就行了
+5. 不要修改程序的文件名
+6. 程序在右下角托盘里
+
+## 懒人使用建议
+
+1. 先填写订阅地址. 如果是qb里没有订阅的地址, 先生成一次订阅规则, 就可以把订阅地址加入到qb里.
+2. 填写保存路径, 使用类似 `Z:\Anime\各位打个赏吧我好饿呜呜呜呜呜 (2023)\Season 1` 的格式, 程序可以自动解析相关内容.
+3. 在使用api与qb通信的状态下, 编辑关键字可以实时过滤出匹配到的结果.
+
+# qb订阅管理器 初始化配置
 
 ## Windows/Linux桌面环境下的qb使用
 
@@ -37,7 +91,7 @@ qBittorrent rss订阅 下载规则管理
 
 已有的订阅规则可以通过右键导入. 编辑好之后记得先保存再生成规则
 
-## docker等环境下的qb使用
+## 通过api连接docker等环境下的qb使用
 
 docker等环境下, 程序可以通过api远程管理qbittorrent
 
@@ -68,12 +122,6 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 点击生成规则可以写入到qb里
 
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_write.gif)
-
-# 懒人使用建议
-
-1. 先填写订阅地址. 如果是qb里没有订阅的地址, 先生成一次订阅规则, 就可以把订阅地址加入到qb里.
-2. 填写保存路径, 使用类似 `Z:\Anime\各位打个赏吧我好饿呜呜呜呜呜 (2023)\Season 1` 的格式, 程序可以自动解析相关内容.
-3. 在使用api与qb通信的状态下, 编辑关键字可以实时过滤出匹配到的结果.
 
 # 导入/导出规则进行分享
 
@@ -130,49 +178,6 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 - `Delete` 可以删除数据, 用鼠标选中多个单元格可以删除多个数据
 - `方向键` 上下左右可以切换选中的单元格
 - `Alt+1`, `Alt+2` 等 `Alt+数字` 操作可以切换分组
-
-# qb-rss-manager 懒人包
-
-填好想要自动下载的文件信息，就能让qb自动下载想要的番剧，自动追番必备，用过都说好！
-
-## 警告
-
-本工具没有任何售后, 在使用过程中发生的一切后果由使用者自己承担. 对于程序bug, 使用者因操作不当或其它原因导致的数据丢失,
-硬件损坏等问题概不负责.
-
-## 懒人包使用方法
-
-[Release页面](https://github.com/Nriver/qb-rss-manager/releases) 找到懒人包下载下来解压.
-
-0. 运行all in one初始化工具 aio_init.exe
-1. 启动 qbittorrent.exe, 设置rss源, 更新数据.
-2. 运行qb管理器 QBRssManager.exe
-3. 修改 '保存路径' 列的存储路径, 注意目录命名会影响自动重命名是否执行
-4. 点击 '保存', 点击 '生成RSS订阅下载规则', 会自动生成qb的rss下载规则并启动qb. (注意qb启动后,
-   匹配到rss订阅规则就会开始下载.)
-5. 仿照示例写自己的规则, 重复3-4
-
-初始化  
-![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/0.gif)
-
-加载RSS数据  
-![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/1.gif)
-
-管理RSS订阅  
-![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/2.gif)
-
-等待自动重命名  
-![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/3.gif)
-
-## 提示
-
-0. 程序路径可以有中文但是不要有空格
-1. 输入关键字过滤时下方会显示过滤结果
-2. 修改完记得点保存或者备份
-3. 下载完成后 Season XX 目录下的文件会自动重命名, 默认下载完成后15秒自动改名. 有可能删除文件或者覆盖文件, 自己看着办吧.
-4. 需要添加新的rss源请先在qb内添加, 确认qb能加载rss数据, 之后用管理器管理订阅就行了
-5. 不要修改程序的文件名
-6. 程序在右下角托盘里
 
 # 声明
 
