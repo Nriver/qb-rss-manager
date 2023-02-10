@@ -27,7 +27,9 @@ qBittorrent rss订阅 下载规则管理
 
 <!--te-->
 
-# Windows/Linux桌面环境下的qb使用
+# 初始化配置
+
+## Windows/Linux桌面环境下的qb使用
 
 1. 从release下载最新对应平台的可执行文件
 2. 首次运行会生成config.json, 请修改`qb_executable`和`rules_path`为你的qb主程序路径, 如果安装在默认路径可以不修改.
@@ -35,7 +37,7 @@ qBittorrent rss订阅 下载规则管理
 
 已有的订阅规则可以通过右键导入. 编辑好之后记得先保存再生成规则
 
-# docker等环境下的qb使用
+## docker等环境下的qb使用
 
 docker等环境下, 程序可以通过api远程管理qbittorrent
 
@@ -66,6 +68,12 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 点击生成规则可以写入到qb里
 
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/docs/rss_write.gif)
+
+# 懒人使用建议
+
+1. 先填写订阅地址. 如果是qb里没有订阅的地址, 先生成一次订阅规则, 就可以把订阅地址加入到qb里.
+2. 填写保存路径, 使用类似 `Z:\Anime\各位打个赏吧我好饿呜呜呜呜呜 (2023)\Season 1` 的格式, 程序可以自动解析相关内容.
+3. 在使用api与qb通信的状态下, 编辑关键字可以实时过滤出匹配到的结果.
 
 # 导入/导出规则进行分享
 
