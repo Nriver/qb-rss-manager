@@ -802,6 +802,13 @@ class App(QWidget):
             # 这里用到了format 不适合放到函数里去
             if not g.data_list[r][2]:
                 auto_complete = ''
+
+                # 截取名称
+                if g.config['keyword_trim_length']:
+                    # 留存原始变量
+                    tmp = series_name + ''
+                    series_name = series_name[:min(int(g.config['keyword_trim_length']), len(series_name))]
+
                 if g.data_groups[g.current_data_list_index]['keyword_override']:
                     auto_complete = g.data_groups[g.current_data_list_index]['keyword_override'].format(**locals())
                 elif g.config['keyword_default']:
@@ -814,6 +821,10 @@ class App(QWidget):
                     g.data_list[r][2] = auto_complete
                     item = QTableWidgetItem(auto_complete)
                     self.tableWidget.setItem(r, 2, item)
+
+                # 还原原始变量
+                if g.config['keyword_trim_length']:
+                    series_name = tmp
 
             # 自动填充RSS订阅地址
             auto_complete_rss_info()

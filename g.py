@@ -80,6 +80,7 @@ def get_default_config():
         'qb_api_password': 'adminadmin',
         'keyword_default': '{series_name}',
         'rss_default': '',
+        'keyword_trim_length': '',
     }
 
     return default_config
