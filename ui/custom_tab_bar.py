@@ -13,6 +13,9 @@ class CustomTabBar(QTabBar):
         QTabBar.__init__(self, parent)
         self.editor = QLineEdit(self)
 
+        # 标签宽度
+        self.setStyleSheet("QTabBar::tab {min-width: 120px;}")
+
         if platform.system() == 'Windows':
             # windows 特有的输入法bug, 必须要用Dialog才能切换输入法, 再设置成无边框模式就能看上去和Popup一样了
             self.editor.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.FramelessWindowHint)
