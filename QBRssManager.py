@@ -246,6 +246,9 @@ class App(QWidget):
         self.tableWidget.setItemDelegateForColumn(2, CustomDelegate(self))
         self.tableWidget.setItemDelegateForColumn(3, CustomDelegate(self))
 
+        self.tableWidget.setItemDelegateForColumn(5, CustomDelegate(self))
+        self.tableWidget.setItemDelegateForColumn(6, CustomDelegate(self))
+
     def createTabs(self):
         # 无法共享widget 只好初始化多个widget了
         # 自定义tabbar 方便修改
