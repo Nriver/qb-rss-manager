@@ -33,6 +33,27 @@ def parse_feed_url(s):
     return res
 
 
+def parse_articles_for_type_hint(articles, source_name):
+    article_titles = []
+    article_details = []
+    for article in articles:
+        url = ''
+        # feed的链接, 有的在id里面, 有的在url里面, 有的在link里面
+        for y in ['id', 'link', 'url']:
+            if y in article and str(article[y]).startswith('http'):
+                url = article[y]
+                break
+
+        article_titles.append(article['title'])
+        article_details.append({
+            'title': article['title'],
+            'url': url,
+            'source_name': source_name,
+            'torrent_url': article['torrentURL'],
+        })
+    return article_titles, article_details
+
+
 if __name__ == '__main__':
     print(parse_feed_url('h, s|v a'))
     print(parse_feed_url('http'))

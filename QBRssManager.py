@@ -26,7 +26,7 @@ from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path, get_series_from_season_path
 from utils.pyqt_util import catch_exceptions
-from utils.qb_util import check_qb_port_open, parse_feed_url
+from utils.qb_util import check_qb_port_open, parse_feed_url, parse_articles_for_type_hint
 from utils.string_util import try_split_date_and_name
 from utils.time_util import try_convert_time
 from utils.windows_util import refresh_tray
@@ -415,21 +415,10 @@ class App(QWidget):
                     article_details = []
                     for x in rss_feeds:
                         if rss_feeds[x]['url'] in feed_list:
-                            for article in rss_feeds[x]['articles']:
-                                url = ''
-                                # feed的链接, 有的在id里面, 有的在url里面, 有的在link里面
-                                for y in ['id', 'link', 'url']:
-                                    if y in article and str(article[y]).startswith('http'):
-                                        url = article[y]
-                                        break
+                            article_titles_tmp, article_details_tmp = parse_articles_for_type_hint(rss_feeds[x]['articles'], x)
+                            article_titles.extend(article_titles_tmp)
+                            article_details.extend(article_details_tmp)
 
-                                article_titles.append(article['title'])
-                                article_details.append({
-                                    'title': article['title'],
-                                    'url': url,
-                                    'source_name': x,
-                                    'torrent_url': article['torrentURL'],
-                                })
                     self.tableWidget.type_hints = article_titles
                     self.tableWidget.article_details = article_details
                     # 数据太多可能会导致卡顿 这里尽量不要输出
@@ -450,6 +439,9 @@ class App(QWidget):
         else:
             # 读取本地feed文件
             try:
+                article_titles = []
+                article_details = []
+
                 # 读取qb feed json数据
                 feed_uid = None
                 with open(g.config['feeds_json_path'], 'r', encoding='utf-8') as f:
@@ -459,18 +451,22 @@ class App(QWidget):
                         if feeds_json[x]['url'] in feed_list:
                             feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
                             logger.info(f'feed_uid {feed_uid}')
-                            break
-                if feed_uid:
-                    # 读取rss feed的标题 写入 type_hints 列表
-                    article_titles = []
-                    article_path = g.config['rss_article_folder'] + '/' + feed_uid + '.json'
-                    with open(article_path, 'r', encoding='utf-8') as f:
-                        article = json.loads(f.read())
-                        for x in article:
-                            article_titles.append(x['title'])
-                    self.tableWidget.type_hints = article_titles
-                    # logger.info(self.tableWidget.type_hints)
-                    return True
+
+                            if feed_uid:
+                                # 读取rss feed的标题 写入 type_hints 列表
+                                article_titles = []
+                                article_path = g.config['rss_article_folder'] + '/' + feed_uid + '.json'
+                                logger.info(article_path)
+                                with open(article_path, 'r', encoding='utf-8') as f:
+                                    articles = json.loads(f.read())
+                                article_titles_tmp, article_details_tmp = parse_articles_for_type_hint(articles, x)
+                                article_titles.extend(article_titles_tmp)
+                                article_details.extend(article_details_tmp)
+
+                self.tableWidget.type_hints = article_titles
+                self.tableWidget.article_details = article_details
+                # logger.info(self.tableWidget.type_hints)
+                return True
             except Exception as e:
                 logger.info(f'exception {e}')
         self.text_browser.setText('没找到RSS数据呀')
