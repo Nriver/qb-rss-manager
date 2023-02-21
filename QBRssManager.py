@@ -393,6 +393,7 @@ class App(QWidget):
         # row 是当前表格的行数, 这里读取对应行的订阅链接来获取feed数据
 
         self.tableWidget.type_hints = []
+        self.tableWidget.article_details = []
         # 当前行feed路径数据
         current_row_feed = g.data_list[row][6]
         logger.info(f'current_row_feed {current_row_feed}')
