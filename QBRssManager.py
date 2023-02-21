@@ -1585,19 +1585,37 @@ class App(QWidget):
 
     def menu_delete_action(self):
         # 右键菜单 删除
-        r = self.tableWidget.currentRow()
-        logger.info(r)
         self.tableWidget.blockSignals(True)
 
-        # 修改为只删除当前行, 不清理列表
-        r = self.tableWidget.currentRow()
-        g.data_list[r] = ['' for _ in range(len(headers))]
-        cx = r
-        for cy in range(len(headers)):
-            item = QTableWidgetItem('')
-            if cy in g.config['center_columns']:
-                item.setTextAlignment(Qt.AlignCenter)
-            self.tableWidget.setItem(cx, cy, item)
+        # 遍历元素找出哪些行有被选中的元素
+        r_list = []
+        for cx in range(len(g.data_list)):
+            delete_flag = False
+            for cy in range(len(headers)):
+                item = self.tableWidget.item(cx, cy)
+                if item.isSelected():
+                    # logger.info(f'{item.isSelected()} {item.text()}')
+                    if cx not in r_list:
+                        r_list.append(cx)
+                        delete_flag = True
+                if delete_flag:
+                    break
+        logger.info(f'删除行 {r_list}')
+
+        # r = self.tableWidget.currentRow()
+        # logger.info(r)
+        # # (临时方案, 已废弃) 修改为只删除当前行, 不清理列表
+        # r = self.tableWidget.currentRow()
+
+        # 删除所有被选中的行
+        for r in r_list:
+            g.data_list[r] = ['' for _ in range(len(headers))]
+            cx = r
+            for cy in range(len(headers)):
+                item = QTableWidgetItem('')
+                if cy in g.config['center_columns']:
+                    item.setTextAlignment(Qt.AlignCenter)
+                self.tableWidget.setItem(cx, cy, item)
         # 更新数据
         g.update_data_list()
         # 保存结果
