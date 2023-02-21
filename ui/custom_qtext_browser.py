@@ -35,7 +35,7 @@ class CustomQTextBrowser(QTextBrowser):
             # self.parent_app.text_browser.append('<br/>'.join(type_hints))
             for x in article_details:
                 self.parent_app.text_browser.append(
-                    f"""<a style="color:#00a3a3">{x['source_name']}</a> {x['title']} <a href="{x['url']} alt="{x['url']}"">链接</a>""")
+                    f"""<a style="color:#00a3a3">{x['source_name']}</a> {x['title']} <a href="{x['url']}" alt="{x['url']}">链接</a> <a href="{x['torrent_url']}" alt="{x['torrent_url']}">下载</a>""")
         else:
             # 保留匹配的
             filtered_hints = []
@@ -57,7 +57,7 @@ class CustomQTextBrowser(QTextBrowser):
                 for i in filtered_hints:
                     x = article_details[i]
                     self.parent_app.text_browser.append(
-                        f"""<a style="color:#00a3a3">{x['source_name']}</a> {x['title']} <a href="{x['url']}" alt="{x['url']}">链接</a>""")
+                        f"""<a style="color:#00a3a3">{x['source_name']}</a> {x['title']} <a href="{x['url']}" alt="{x['url']}">链接</a> <a href="{x['torrent_url']}" alt="{x['torrent_url']}">下载</a>""")
 
             else:
                 self.parent_app.text_browser.append('<p>暂时没有找到相关的feed</p>')

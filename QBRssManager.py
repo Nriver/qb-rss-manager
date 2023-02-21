@@ -416,16 +416,18 @@ class App(QWidget):
                         if rss_feeds[x]['url'] in feed_list:
                             for article in rss_feeds[x]['articles']:
                                 url = ''
-                                # feed的链接, 有点在url里面, 有的在link里面
-                                if 'url' in article:
-                                    url = article['url']
-                                elif 'link' in article:
-                                    url = article['link']
+                                # feed的链接, 有的在id里面, 有的在url里面, 有的在link里面
+                                for y in ['id', 'link', 'url']:
+                                    if y in article and str(article[y]).startswith('http'):
+                                        url = article[y]
+                                        break
+
                                 article_titles.append(article['title'])
                                 article_details.append({
                                     'title': article['title'],
                                     'url': url,
                                     'source_name': x,
+                                    'torrent_url': article['torrentURL'],
                                 })
                     self.tableWidget.type_hints = article_titles
                     self.tableWidget.article_details = article_details
