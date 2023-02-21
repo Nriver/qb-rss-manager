@@ -1,15 +1,45 @@
+import subprocess
+
 from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import QTextBrowser
+from loguru import logger
 
 import g
+
+from utils.qb_util import check_qb_port_open
 from utils.string_util import wildcard_match_check
 
 
 def handle_links(url):
     if not url.scheme():
         url = QUrl.fromLocalFile(url.toString())
-    QDesktopServices.openUrl(url)
+    url_str = url.toString()
+    logger.info(f'点击了url {url_str}')
+
+    if url_str.endswith('.torrent'):
+        # torrent 文件需要特殊处理
+        logger.info(f'处理torrent链接')
+        if g.config['use_qb_api'] == 1:
+            from QBRssManager import qb_client
+            if check_qb_port_open(g.config['qb_api_ip'], g.config['qb_api_port']):
+                # 使用qb的api读取feed
+                try:
+                    qb_client.auth_log_in(username=g.config['qb_api_username'], password=g.config['qb_api_password'])
+                    logger.info(f'已连接api {qb_client.is_logged_in}')
+                    res = qb_client.torrents_add(urls=(url_str,))
+                    logger.info(res)
+                except Exception as e:
+                    logger.error(f'{e}')
+        else:
+            logger.info('cmd调用')
+            try:
+                subprocess.Popen([g.config['qb_executable'], url_str])
+            except Exception as e:
+                logger.error(f'{e}')
+    else:
+        # magnet链接和页面链接不用处理
+        QDesktopServices.openUrl(url)
 
 
 class CustomQTextBrowser(QTextBrowser):
@@ -61,3 +91,4 @@ class CustomQTextBrowser(QTextBrowser):
 
             else:
                 self.parent_app.text_browser.append('<p>暂时没有找到相关的feed</p>')
+
