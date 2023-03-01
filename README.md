@@ -2,6 +2,11 @@
 
 qBittorrent rss订阅 下载规则管理
 
+[![Github all releases](https://img.shields.io/github/downloads/Nriver/qb-rss-manager/total.svg)](https://GitHub.com/Nriver/qb-rss-manager/releases/)
+[![GitHub license](https://badgen.net/github/license/Nriver/qb-rss-manager)](https://github.com/Nriver/qb-rss-manager/blob/master/LICENSE)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Nriver/qb-rss-manager/graphs/commit-activity)
+[![GitHub release](https://img.shields.io/github/v/release/Nriver/qb-rss-manager.svg)](https://github.com/Nriver/qb-rss-manager/releases/)
+
 <a href="https://count.getloli.com"><img align="center" src="https://count.getloli.com/get/@Nriver_qb-rss-manager"></a><br>
 
 <!--ts-->
