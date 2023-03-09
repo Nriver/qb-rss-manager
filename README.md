@@ -232,6 +232,8 @@ qb增强版主程序来自 https://github.com/c0re100/qBittorrent-Enhanced-Editi
 
 感谢 `**楷` 赞助的5元!
 
+感谢 `*メ` 赞助的200元!
+
 感谢Jetbrins公司提供的Pycharm编辑器!
 
 [![Jetbrains](docs/jetbrains.svg)](https://jb.gg/OpenSource)
