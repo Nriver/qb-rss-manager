@@ -7,6 +7,9 @@ qBittorrent rss订阅 下载规则管理
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Nriver/qb-rss-manager/graphs/commit-activity)
 [![GitHub release](https://img.shields.io/github/v/release/Nriver/qb-rss-manager.svg)](https://github.com/Nriver/qb-rss-manager/releases/)
 
+快速管理qBittorrent的RSS订阅数据. 实时过滤匹配到的数据, 方便管理你的qb订阅.
+可以和[Episode-ReName](https://github.com/Nriver/Episode-ReName) 联动实现自动改名.
+
 <a href="https://github.com/Nriver"><img align="center" src="https://moe-counter--nriver1.repl.co/get/@Nriver_qb-rss-manager"></a><br>
 
 <!--ts-->
@@ -64,7 +67,7 @@ qb增强版, 都已经配置完毕, 可以开箱即用.
 加载RSS数据  
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/1.gif)
 
-管理RSS订阅  
+管理RSS订阅, 关键字输入过程中, 匹配到的RSS数据实时过滤显示
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/2.gif)
 
 等待自动重命名  
@@ -148,7 +151,8 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 填写`关键字`时会触发自动填充机制, 程序会依据配置尝试自动填充订阅地址. 如果没有配置订阅地址的默认值, 则会自动复制表格上方最近的订阅地址.
 
 填写`保存路径`时会触发自动填充机制, 程序会解析保存路径, 尽量解析出所有的数据.
-推荐的保存路径格式为 `Z:\Anime\XXXXX\Season 1`. 程序可以解析出的数据 `XXXXX` 对应模板变量 `{series_name}`. 特殊格式 `Z:\Anime\XXXXX (2023)\Season 1`, 会忽略掉后面的年份.
+推荐的保存路径格式为 `Z:\Anime\XXXXX\Season 1`. 程序可以解析出的数据 `XXXXX` 对应模板变量 `{series_name}`.
+特殊格式 `Z:\Anime\XXXXX (2023)\Season 1`, 会忽略掉后面的年份.
 
 ### 默认关键字模板配置
 
