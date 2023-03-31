@@ -1,4 +1,4 @@
-# qb-rss-manager
+# 📂 qb-rss-manager
 
 qBittorrent rss订阅 下载规则管理
 
@@ -39,17 +39,17 @@ qBittorrent rss订阅 下载规则管理
 
 <!--te-->
 
-# qb-rss-manager 懒人包
+# 😴 qb-rss-manager 懒人包
 
 填好想要自动下载的文件信息，就能让qb自动下载想要的番剧，自动追番必备，用过都说好！懒人包包含qb订阅管理工具, 自动重命名工具,
 qb增强版, 都已经配置完毕, 可以开箱即用.
 
-## 警告
+## ⚠️ 警告
 
 本工具没有任何售后, 在使用过程中发生的一切后果由使用者自己承担. 对于程序bug, 使用者因操作不当或其它原因导致的数据丢失,
 硬件损坏等问题概不负责.
 
-## 懒人包使用方法
+## 📖 懒人包使用方法
 
 [Release页面](https://github.com/Nriver/qb-rss-manager/releases) 找到懒人包下载下来解压.
 
@@ -73,7 +73,7 @@ qb增强版, 都已经配置完毕, 可以开箱即用.
 等待自动重命名  
 ![](https://raw.githubusercontent.com/Nriver/qb-rss-manager/main/aio/3.gif)
 
-## 提示
+## 💡 提示
 
 0. 程序路径可以有中文但是不要有空格
 1. 输入关键字过滤时下方会显示过滤结果
@@ -83,15 +83,15 @@ qb增强版, 都已经配置完毕, 可以开箱即用.
 5. 不要修改程序的文件名
 6. 程序在右下角托盘里
 
-## 懒人使用建议
+## 🤔 懒人使用建议
 
 1. 先填写订阅地址. 如果是qb里没有订阅的地址, 先生成一次订阅规则, 就可以把订阅地址加入到qb里.
 2. 填写保存路径, 使用类似 `Z:\Anime\各位打个赏吧我好饿呜呜呜呜呜\Season 1` 的格式, 程序可以自动解析相关内容.
 3. 在使用api与qb通信的状态下, 编辑关键字可以实时过滤出匹配到的结果.
 
-# qb订阅管理器 初始化配置
+# 🚀 qb订阅管理器 初始化配置
 
-## Windows/Linux桌面环境下的qb使用
+## 🖥️ Windows/Linux桌面环境下的qb使用
 
 1. 从release下载最新对应平台的可执行文件
 2. 首次运行会生成config.json, 请修改`qb_executable`和`rules_path`为你的qb主程序路径, 如果安装在默认路径可以不修改.
@@ -99,7 +99,7 @@ qb增强版, 都已经配置完毕, 可以开箱即用.
 
 已有的订阅规则可以通过右键导入. 编辑好之后记得先保存再生成规则
 
-## 通过api连接docker等环境下的qb使用
+## 🌐 通过api连接docker等环境下的qb使用
 
 docker等环境下, 程序可以通过api远程管理qbittorrent
 
@@ -144,9 +144,9 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 `close_to_tray` 点击关闭最小化到托盘. 默认开启
 `data_auto_zfill` 添加时间列输入的日期自动格式化. 比如 2022.8 2022-8 2022/8 转换成2022年08月, 默认开启
 
-## 自动填充
+## 🤖 自动填充
 
-### 触发机制
+### ⚡️ 触发机制
 
 填写`关键字`时会触发自动填充机制, 程序会依据配置尝试自动填充订阅地址. 如果没有配置订阅地址的默认值, 则会自动复制表格上方最近的订阅地址.
 
@@ -172,7 +172,7 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 全局配置中的 `rss_default` 可以配置默认的订阅地址. 多个订阅地址可以用 `空格`, ',' `|` 符号隔开.
 该配置可以被分组数据中的 `rss_override` 配置给覆盖, 实现每个分组自动填充不同的.
 
-# 快捷操作/快捷键说明
+# ⌨️ 快捷操作/快捷键说明
 
 - 选中单元格后按 `回车键`, `F2`, `双击` 都能进入编辑模式.
 - 在分组上`双击`可以修改分组名称, 修改名称后按 `回车键` 确认修改.
@@ -187,7 +187,7 @@ docker等环境下, 程序可以通过api远程管理qbittorrent
 - `方向键` 上下左右可以切换选中的单元格
 - `Alt+1`, `Alt+2` 等 `Alt+数字` 操作可以切换分组
 
-# 声明
+# 🔔 声明
 
 qb管理程序来自 https://github.com/Nriver/qb-rss-manager
 
@@ -206,7 +206,7 @@ qb增强版主程序来自 https://github.com/c0re100/qBittorrent-Enhanced-Editi
 
 ---
 
-# Stargazers 数据
+# ⏳ Stargazers 数据
 
 统计图使用 [caarlos0/starcharts](https://github.com/caarlos0/starcharts) 项目生成.
 
@@ -214,7 +214,7 @@ qb增强版主程序来自 https://github.com/c0re100/qBittorrent-Enhanced-Editi
 
 ---
 
-# 捐赠
+# 💰 捐赠
 
 如果你觉得我做的程序对你有帮助, 欢迎捐赠, 这对我来说是莫大的鼓励!
 
@@ -226,7 +226,7 @@ qb增强版主程序来自 https://github.com/c0re100/qBittorrent-Enhanced-Editi
 
 ---
 
-# 感谢
+# 🙏 感谢
 
 感谢不愿留姓名的某位朋友的大力支持, 对本工具以及懒人包的诞生功不可没.
 
