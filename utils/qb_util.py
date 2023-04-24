@@ -70,6 +70,21 @@ def parse_feeds_url(feeds):
             results.extend(tmp)
     return results
 
+
+def convert_feeds_to_one_level_dict(feeds):
+    """
+    转换成1层的dict方便解析
+    """
+    res = {}
+    for x in feeds:
+        feed = feeds[x]
+        if 'uid' in feed and 'url' in feed:
+            res[x] = feed
+        else:
+            tmp = convert_feeds_to_one_level_dict(feed)
+            res.update(tmp)
+    return res
+
 if __name__ == '__main__':
     print(parse_feed_url('h, s|v a'))
     print(parse_feed_url('http'))

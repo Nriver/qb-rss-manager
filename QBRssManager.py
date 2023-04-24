@@ -26,7 +26,8 @@ from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path, get_series_from_season_path
 from utils.pyqt_util import catch_exceptions
-from utils.qb_util import check_qb_port_open, parse_feed_url, parse_articles_for_type_hint, parse_feeds_url
+from utils.qb_util import check_qb_port_open, parse_feed_url, parse_articles_for_type_hint, parse_feeds_url, \
+    convert_feeds_to_one_level_dict
 from utils.string_util import try_split_date_and_name
 from utils.time_util import try_convert_time
 from utils.windows_util import refresh_tray
@@ -413,9 +414,11 @@ class App(QWidget):
                     rss_feeds = qb_client.rss_items(include_feed_data=True)
                     article_titles = []
                     article_details = []
-                    for x in rss_feeds:
-                        if rss_feeds[x]['url'] in feed_list:
-                            article_titles_tmp, article_details_tmp = parse_articles_for_type_hint(rss_feeds[x]['articles'], x)
+                    server_rss_feeds = convert_feeds_to_one_level_dict(rss_feeds)
+
+                    for x in server_rss_feeds:
+                        if server_rss_feeds[x]['url'] in feed_list:
+                            article_titles_tmp, article_details_tmp = parse_articles_for_type_hint(server_rss_feeds[x]['articles'], x)
                             article_titles.extend(article_titles_tmp)
                             article_details.extend(article_details_tmp)
 
