@@ -448,11 +448,12 @@ class App(QWidget):
                 # 读取qb feed json数据
                 feed_uid = None
                 with open(g.config['feeds_json_path'], 'r', encoding='utf-8') as f:
-                    feeds_json = json.loads(f.read())
-                    logger.info(f'feeds_json {feeds_json}')
-                    for x in feeds_json:
-                        if feeds_json[x]['url'] in feed_list:
-                            feed_uid = feeds_json[x]['uid'].replace('-', '')[1:-1]
+                    rss_feeds = json.loads(f.read())
+                    logger.info(f'rss_feeds {rss_feeds}')
+                    server_rss_feeds = convert_feeds_to_one_level_dict(rss_feeds)
+                    for x in server_rss_feeds:
+                        if server_rss_feeds[x]['url'] in feed_list:
+                            feed_uid = server_rss_feeds[x]['uid'].replace('-', '')[1:-1]
                             logger.info(f'feed_uid {feed_uid}')
 
                             if feed_uid:
