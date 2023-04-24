@@ -26,7 +26,7 @@ from ui.search_window import SearchWindow
 from ui.tray_icon import TrayIcon
 from utils.path_util import resource_path, format_path_by_system, format_path, get_series_from_season_path
 from utils.pyqt_util import catch_exceptions
-from utils.qb_util import check_qb_port_open, parse_feed_url, parse_articles_for_type_hint
+from utils.qb_util import check_qb_port_open, parse_feed_url, parse_articles_for_type_hint, parse_feeds_url
 from utils.string_util import try_split_date_and_name
 from utils.time_util import try_convert_time
 from utils.windows_util import refresh_tray
@@ -1084,7 +1084,8 @@ class App(QWidget):
                 # 要先加feed
                 # qb里已有的feed
                 rss_feeds = qb_client.rss_items()
-                rss_urls = [rss_feeds[x]['url'] for x in rss_feeds]
+                # feed可能包含文件夹, 这里要处理嵌套的多层feed格式
+                rss_urls = parse_feeds_url(rss_feeds)
 
                 # 订阅规则里所有的feed
                 for x in g.data_groups:

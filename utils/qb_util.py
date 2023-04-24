@@ -53,6 +53,22 @@ def parse_articles_for_type_hint(articles, source_name):
         })
     return article_titles, article_details
 
+def parse_feeds_url(feeds):
+    """
+    提取feed的订阅链接
+    feed可能包含文件夹, 这里要处理嵌套的多层feed格式
+    """
+    results = []
+    for x in feeds:
+        feed = feeds[x]
+        if 'url' in feed and 'url' in feed:
+            # 普通feed
+            results.append(feed['url'])
+        else:
+            # 文件夹
+            tmp = parse_feeds_url(feed)
+            results.extend(tmp)
+    return results
 
 if __name__ == '__main__':
     print(parse_feed_url('h, s|v a'))
