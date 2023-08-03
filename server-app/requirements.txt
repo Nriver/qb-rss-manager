@@ -1,0 +1,4 @@
+flask
+loguru
+qbittorrent-api
+pillow
