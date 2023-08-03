@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ItemList from "@/components/ItemList.vue";
 import Config from "@/components/Config.vue";
+import ConfigEditor from "@/components/ConfigEditor.vue";
 
 
 const routes = [
@@ -27,6 +28,11 @@ const routes = [
     path: '/config',
     name: '设置',
     component: Config
+  },
+  {
+    path: '/configEditor',
+    name: '编辑配置文件',
+    component: ConfigEditor
   },
 ]
 

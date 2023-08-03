@@ -11,6 +11,7 @@
         <router-link to="/">首页</router-link>
         <router-link to="/list">订阅列表</router-link>
         <router-link to="/config">设置</router-link>
+        <router-link to="/configEditor">编辑配置文件</router-link>
         <router-link to="/about">关于</router-link>
       </nav>
     </div>
