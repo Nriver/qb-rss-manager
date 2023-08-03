@@ -2,6 +2,11 @@
   <div>
     <!-- 侧边栏菜单 -->
     <div :class="['sidebar', { 'active': showSidebar }]">
+      <!-- Logo图片 -->
+      <div class="center-logo">
+        <img src="~@/assets/logo.png" alt="Logo" />
+      </div>
+
       <nav>
         <router-link to="/">首页</router-link>
         <router-link to="/list">订阅列表</router-link>
@@ -123,6 +128,20 @@ nav a.router-link-exact-active {
   /* 设置文字区域占据的空间，剩余空间将用于文字居中 */
   flex: 1;
   text-align: center;
+}
+
+.center-logo {
+  margin-top: 2em;
+  /* 设置Logo区域占据的空间，剩余空间将用于Logo居中 */
+  flex: 1;
+  display: flex;
+  justify-content: center; /* 居中显示Logo图片 */
+}
+
+.center-logo img {
+  /* 可以根据需要调整Logo图片的样式，如宽度、高度等 */
+  max-width: 100%;
+  max-height: 100px;
 }
 
 </style>
