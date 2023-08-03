@@ -4,19 +4,27 @@
     <div :class="['sidebar', { 'active': showSidebar }]">
       <nav>
         <router-link to="/">首页</router-link>
-        <router-link to="/about">关于</router-link>
         <router-link to="/list">订阅列表</router-link>
+        <router-link to="/config">设置</router-link>
+        <router-link to="/about">关于</router-link>
       </nav>
     </div>
 
     <!-- 主要内容 -->
     <div :class="['main-content', { 'shift-right': showSidebar }]">
-      <!-- 汉堡按钮 -->
-      <button @click="showSidebar = !showSidebar" class="hamburger-btn">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
+      <div class="header">
+        <div class="left">
+          <!-- 汉堡按钮 -->
+          <button @click="showSidebar = !showSidebar" class="hamburger-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+
+        <!-- 显示当前路由名称 -->
+        <div class="current-route center">{{ $route.name }}</div>
+      </div>
 
       <router-view/>
     </div>
@@ -33,12 +41,19 @@
   color: #2c3e50;
 }
 
+.header {
+  display: flex;
+  align-items: center; /* 垂直居中对齐 */
+  margin-bottom: 10px;
+}
+
 .hamburger-btn {
   display: block;
   cursor: pointer;
   background-color: transparent;
   border: none;
   padding: 5px;
+  margin-right: 10px; /* 设置汉堡按钮和当前路由名称的间距 */
 }
 
 .hamburger-btn span {
@@ -89,6 +104,27 @@ nav a.router-link-exact-active {
 .main-content.shift-right {
   margin-left: 200px; /* 侧边栏的宽度 */
 }
+
+.current-route {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 2em;
+  margin-right: 2em;
+}
+
+.left {
+  /* 设置按钮区域占据的空间 */
+  flex: 0 0 auto;
+  /* 可选：设置按钮与文字之间的间距 */
+  margin-right: 10px;
+}
+
+.center {
+  /* 设置文字区域占据的空间，剩余空间将用于文字居中 */
+  flex: 1;
+  text-align: center;
+}
+
 </style>
 
 <script setup>
