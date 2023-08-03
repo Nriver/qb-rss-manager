@@ -1,6 +1,10 @@
 # 📂 qb-rss-manager
 
-qBittorrent rss订阅 下载规则管理
+qBittorrent rss订阅 下载规则管理工具
+
+1.0版本为基于pyqt5的桌面应用，源代码在这个 [pyqt5分支里](https://github.com/Nriver/qb-rss-manager/tree/pyqt5)
+
+后续2.0版本计划改为web应用, 目前正在开发中。
 
 [![Github all releases](https://img.shields.io/github/downloads/Nriver/qb-rss-manager/total.svg)](https://GitHub.com/Nriver/qb-rss-manager/releases/)
 [![GitHub license](https://badgen.net/github/license/Nriver/qb-rss-manager)](https://github.com/Nriver/qb-rss-manager/blob/master/LICENSE)
@@ -8,7 +12,7 @@ qBittorrent rss订阅 下载规则管理
 [![GitHub release](https://img.shields.io/github/v/release/Nriver/qb-rss-manager.svg)](https://github.com/Nriver/qb-rss-manager/releases/)
 
 快速管理qBittorrent的RSS订阅数据. 实时过滤匹配到的数据, 方便管理你的qb订阅.
-可以和[Episode-ReName](https://github.com/Nriver/Episode-ReName) 联动实现自动改名.
+可以和 [Episode-ReName](https://github.com/Nriver/Episode-ReName) 联动实现自动改名.
 
 <a href="https://github.com/Nriver"><img align="center" src="https://moe-counter--nriver1.repl.co/get/@Nriver_qb-rss-manager"></a><br>
 
