@@ -2,7 +2,7 @@
 QBRssManager.exe
 QBRssManager
 .idea/
-*.json
+pyqt5-ver/*.json
 backup.zip
 backup/
 
