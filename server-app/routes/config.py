@@ -37,3 +37,16 @@ def update_config():
         return jsonify({"message": "Config updated successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@config_bp.route('/save_data', methods=['POST'])
+def save_data():
+    try:
+        config_data = read_config()
+        data = request.get_json()
+        config_data["data_dump"]["data_groups"] = data["data_dump"]["data_groups"]
+        print(data["data_dump"]["data_groups"])
+        write_config(config_data)
+        return jsonify({"message": "Data saved successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": "Failed to save data", "details": str(e)}), 500
