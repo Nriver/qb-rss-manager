@@ -6,7 +6,7 @@ app = Flask(__name__)
 # 允许所有来源的跨域请求
 CORS(app)
 
-app.register_blueprint(config_bp)
+app.register_blueprint(config_bp, url_prefix='/api')
 
 # 假设有一个简单的数据列表
 data_list = [{'id': 1, 'name': 'Item 1'}, {'id': 2, 'name': 'Item 2'}]
